@@ -13,6 +13,6 @@
     "standard": "^17.1.0"
   },  
   "scripts": {
-    "test": "standard && bare test.js"
+    "test": "standard && brittle test.js"
   }
 }
