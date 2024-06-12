@@ -1,0 +1,18 @@
+{
+  "name": "simple-get",
+  "version": "1.0.0",
+  "description": "Simple http & https fetch utility for Bare",
+  "main": "index.js",
+  "author": "Holepunch",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "bare-http1": "^3.5.2",
+    "bare-https": "^1.1.0"
+  },
+  "devDependencies": {
+    "standard": "^17.1.0"
+  },  
+  "scripts": {
+    "test": "standard && bare test.js"
+  }
+}
