@@ -1,5 +1,5 @@
 {
-  "name": "simple-get",
+  "name": "bare-fetch",
   "version": "1.0.0",
   "description": "Simple http & https fetch utility for Bare",
   "main": "index.js",

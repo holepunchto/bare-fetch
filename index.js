@@ -1,7 +1,7 @@
 const http = require('bare-http1')
 const https = require('bare-https')
 
-module.exports = function get (link) {
+module.exports = function fetch (link, opts = {}) {
   return new Promise((resolve, reject) => {
     function processLink (link) {
       const target = new URL(link)
@@ -11,15 +11,19 @@ module.exports = function get (link) {
         protocol = http
       } else if (target.protocol === 'https:') {
         protocol = https
-      } else reject(new Error('You need an http or https link'))
+      } else {
+        reject(new Error('You need an http or https link'))
+        return
+      }
 
       const req = protocol.request(target, (incoming) => {
         const result = {
           data: null,
+          headers: null,
           status: null
         }
 
-        incoming.setEncoding('utf8')
+        if (opts.format) incoming.setEncoding('utf8')
 
         incoming.on('data', (chunk) => {
           result.data = result.data ? result.data += chunk : chunk
@@ -29,7 +33,11 @@ module.exports = function get (link) {
           if (incoming.headers.location) {
             processLink(incoming.headers.location)
           } else {
+            if (opts.format === 'json') result.data = JSON.parse(result.data)
+
             result.status = incoming.statusCode
+            result.headers = incoming.headers
+
             resolve(result)
           }
         })
