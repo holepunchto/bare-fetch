@@ -1,7 +1,8 @@
 const http = require('bare-http1')
 const https = require('bare-https')
+const { Readable } = require('bare-stream')
 
-module.exports = function fetch (link, opts = {}) {
+module.exports = function fetch (link) {
   return new Promise((resolve, reject) => {
     function processLink (link) {
       const target = new URL(link)
@@ -18,25 +19,43 @@ module.exports = function fetch (link, opts = {}) {
 
       const req = protocol.request(target, (incoming) => {
         const result = {
-          data: null,
-          headers: null,
-          status: null
+          body: new Readable(),
+
+          async buffer () {
+            if (this.bodyUsed) throw new Error('The body of this response has already been consumed.')
+            this.bodyUsed = true
+
+            const chunks = []
+
+            for await (const chunk of this.body) {
+              chunks.push(chunk)
+            }
+
+            return Buffer.concat(chunks)
+          },
+
+          async text () {
+            return (await this.buffer()).toString('utf8')
+          },
+
+          async json () {
+            return JSON.parse(await this.text())
+          },
+
+          bodyUsed: false
         }
 
-        if (opts.format) incoming.setEncoding('utf8')
-
         incoming.on('data', (chunk) => {
-          result.data = result.data ? result.data += chunk : chunk
+          result.body.push(chunk)
         })
 
         incoming.on('end', () => {
+          result.body.push(null)
           if (incoming.headers.location) {
             processLink(incoming.headers.location)
           } else {
-            if (opts.format === 'json') result.data = JSON.parse(result.data)
-
             result.status = incoming.statusCode
-            result.headers = incoming.headers
+            result.headers = new Map(Object.entries(incoming.headers))
 
             resolve(result)
           }
