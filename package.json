@@ -1,10 +1,27 @@
 {
   "name": "bare-fetch",
   "version": "1.0.0",
-  "description": "Simple http & https fetch utility for Bare",
-  "main": "index.js",
+  "description": "Minimal WHATWG Fetch implementation for Bare",
+  "exports": {
+    ".": "./index.js",
+    "./package": "./package.json"
+  },
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "test": "standard && bare test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/holepunchto/bare-fetch.git"
+  },
   "author": "Holepunch",
   "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/holepunchto/bare-fetch/issues"
+  },
+  "homepage": "https://github.com/holepunchto/bare-fetch#readme",
   "dependencies": {
     "bare-http1": "^3.5.2",
     "bare-https": "^1.1.0",
@@ -12,8 +29,5 @@
   },
   "devDependencies": {
     "standard": "^17.1.0"
-  },
-  "scripts": {
-    "test": "standard && brittle test.js"
   }
 }
