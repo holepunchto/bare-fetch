@@ -7,6 +7,7 @@ class Response {
     this.headers = new Map()
     this.body = new Readable()
     this.bodyUsed = false
+    this.redirected = false
     this.status = null
   }
 
@@ -77,6 +78,7 @@ module.exports = function fetch (link) {
         incoming.on('end', () => {
           result.body.push(null)
 
+          if (redirects > 0) result.redirected = true
           result.status = incoming.statusCode
           Object.entries(incoming.headers).forEach(h => result.headers.set(...h))
 
