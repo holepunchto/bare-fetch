@@ -1,6 +1,10 @@
 # bare-fetch
 
-Simple http & https fetch function for Bare. It handles redirection from one protocol to the other.
+Minimal WHATWG Fetch implementation for Bare.
+
+```
+npm i bare-fetch
+```
 
 ## Usage
 
