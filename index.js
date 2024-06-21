@@ -8,7 +8,7 @@ class Response {
     this.body = new Readable()
     this.bodyUsed = false
     this.redirected = false
-    this.status = null
+    this.status = 0
   }
 
   async buffer () {
@@ -71,6 +71,8 @@ module.exports = function fetch (link) {
 
         const result = new Response()
 
+        result.status = incoming.statusCode
+
         incoming.on('data', (chunk) => {
           result.body.push(chunk)
         })
@@ -79,7 +81,6 @@ module.exports = function fetch (link) {
           result.body.push(null)
 
           if (redirects > 0) result.redirected = true
-          result.status = incoming.statusCode
           Object.entries(incoming.headers).forEach(h => result.headers.set(...h))
 
           resolve(result)

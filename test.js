@@ -20,12 +20,12 @@ test('basic http', async function (t) {
   const res = await fetch(`http://localhost:${port}`)
   const bufferReceived = await res.buffer()
 
-  t.is(res.status, 200, 'The Response contains the correct status code')
-  t.is(res.headers.get('content-type'), 'text/plain', 'The Response contains the correct header')
-  t.is(res.redirected, false, 'The .redirected property confirms that the request has not been redirected')
-  t.is(Buffer.compare(bufferSent, bufferReceived), 0, 'The Response contains the correct buffer')
-  await t.exception(res.buffer(), /The body of this response has already been consumed./, 'The Response throws the correct error when trying to read its body twice')
-  t.is(res.bodyUsed, true, 'The .bodyUsed property tracks the state of the body')
+  t.is(res.status, 200)
+  t.is(res.headers.get('content-type'), 'text/plain')
+  t.is(res.redirected, false)
+  t.is(Buffer.compare(bufferSent, bufferReceived), 0)
+  await t.exception(res.buffer(), /The body of this response has already been consumed./)
+  t.is(res.bodyUsed, true)
 
   server.close()
 })
@@ -45,9 +45,9 @@ test('text method', async function (t) {
   const res = await fetch(`http://localhost:${port}`)
   const stringReceived = await res.text()
 
-  t.is(stringSent, stringReceived, 'The Response returns the correct string')
-  await t.exception(res.text(), /The body of this response has already been consumed./, 'The Response throws the correct error when trying to read its body twice')
-  t.is(res.bodyUsed, true, 'The .bodyUsed property tracks the state of the body')
+  t.is(stringSent, stringReceived)
+  await t.exception(res.text(), /The body of this response has already been consumed./)
+  t.is(res.bodyUsed, true)
 
   server.close()
 })
@@ -68,9 +68,9 @@ test('json method', async function (t) {
   const res = await fetch(`http://localhost:${port}`)
   const objectReceived = await res.json()
 
-  t.alike(objectSent, objectReceived, 'The Response returns the correct json')
-  await t.exception(res.json(), /The body of this response has already been consumed./, 'The Response throws the correct error when trying to read its body twice')
-  t.is(res.bodyUsed, true, 'The .bodyUsed property tracks the state of the body')
+  t.alike(objectSent, objectReceived)
+  await t.exception(res.json(), /The body of this response has already been consumed./)
+  t.is(res.bodyUsed, true)
 
   server.close()
 })
@@ -102,17 +102,17 @@ test('redirect', async function (t) {
   const bufferReceived = await res.buffer()
   const stringReceived = bufferReceived.toString()
 
-  t.is(serverRedirectCounter, 1, 'The server redirect counter signals one redirection')
-  t.is(lastMessage, stringReceived, 'The Response contains the string obtained from being redirected')
-  t.is(res.redirected, true, 'The .redirected property confirms that the request has been redirected')
+  t.is(serverRedirectCounter, 1)
+  t.is(lastMessage, stringReceived)
+  t.is(res.redirected, true)
 
   server.close()
 })
 
 test('errors', async function (t) {
-  await t.exception(fetch('htp://localhost:0'), /You need an http or https link/, 'Correct error for invalid protocol')
-  await t.exception(fetch('http://lo'), /unknown node or service/, 'Correct error for invalid URL')
-  await t.exception(fetch('http://localhost:10000000000'), /INVALID_URL: Invalid URL/, 'Correct error for invalid port')
+  await t.exception(fetch('htp://localhost:0'), /You need an http or https link/)
+  await t.exception(fetch('http://lo'), /unknown node or service/)
+  await t.exception(fetch('http://localhost:10000000000'), /INVALID_URL: Invalid URL/)
 
   const server = http.createServer().listen(0)
   await waitForServer(server)
@@ -129,8 +129,8 @@ test('errors', async function (t) {
     res.end()
   })
 
-  await t.exception(fetch(`http://localhost:${port}`), /Exceeded 20 redirects./, 'Correct error for recursive redirection')
-  t.is(serverRedirectCounter, 21, 'The server redirect counter signals 21 redirections')
+  await t.exception(fetch(`http://localhost:${port}`), /Exceeded 20 redirects./)
+  t.is(serverRedirectCounter, 21)
 
   server.close()
 })
