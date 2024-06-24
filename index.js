@@ -2,6 +2,8 @@ const http = require('bare-http1')
 const https = require('bare-https')
 const { Readable } = require('bare-stream')
 
+const redirectStatuses = [301, 302, 303, 307, 308]
+
 class Response {
   constructor () {
     this.headers = new Map()
@@ -63,7 +65,7 @@ module.exports = function fetch (link) {
       }
 
       const req = protocol.request(target, (incoming) => {
-        if (incoming.headers.location && (incoming.statusCode >= 300 && incoming.statusCode <= 399)) {
+        if (incoming.headers.location && redirectStatuses.includes(incoming.statusCode)) {
           redirects++
           processLink(incoming.headers.location)
           return
