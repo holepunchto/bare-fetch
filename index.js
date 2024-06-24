@@ -63,7 +63,7 @@ module.exports = function fetch (link) {
       }
 
       const req = protocol.request(target, (incoming) => {
-        if (incoming.headers.location) {
+        if (incoming.headers.location && (incoming.statusCode >= 300 && incoming.statusCode <= 399)) {
           redirects++
           processLink(incoming.headers.location)
           return
