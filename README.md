@@ -17,7 +17,7 @@ The function returns a `Promise` that resolves to a `Response` object .
 The Response wraps a `Readable` stream.
 
 ```js
-import fetch from '.'
+import fetch from 'bare-fetch'
 
 const res = await fetch('https://api.restful-api.dev/objects/7')
 
