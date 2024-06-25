@@ -8,46 +8,47 @@ npm i bare-fetch
 
 ## Usage
 
-### `fetch(link, [options])`
+### `fetch(link)`
 
 `link` must be a string containing an http or https url
 
-The `options` object can contain the following fields:
+The function returns a `Promise` that resolves to a `Response` object .
+
+The Response wraps a `Readable` stream.
 
 ```js
-{
-  format: "utf8" || "json" // specifies the format the received data should be parsed to.
-}
+import fetch from '.'
+
+const res = await fetch('https://api.restful-api.dev/objects/7')
+
+console.log(await res.text())
 ```
 
-The function returns a promise that resolves to a `{ data, headers, status }` object.
+### `Class: Response`
 
-If no `format` option is passed, `data` is kept as a buffer.
+#### `response.buffer()`
+Consumes the stream and returns a buffer.
 
-```js
-const fetch = require('bare-fetch')
+#### `response.text()`
+Consumes the stream, parses it as utf8 and returns a string.
 
-async function main () {
-  const res = await fetch('https://api.restful-api.dev/objects/7')
-  console.log(res)
-}
+#### `response.json() `
+Consumes the stream, parses it as json and returns a js object.
 
-main()
-```
+#### `response.headers`
+The headers on the response.
 
-This will print 
+#### `response.body`
+The `Readable` stream wrapped by the response.
 
-```js
-{
-  data: <Buffer
-    7b 22 69 64 22 3a 22 37 22 2c 22 6e 61 6d 65 22 3a 22 41 70 70 6c 65 20 4d 61
-    63 42 6f 6f 6b 20 50 72 6f 20 31 36 22 2c
-    ... 89 more
-  >,
-  headers: {...}
-  status: 200
-}
-```
+#### `response.bodyUsed`
+A boolean property that tracks whether the stream has already been consumed.
+
+#### `response.status`
+The http status code of the response.
+
+#### `response.redirected`
+A boolean property that tracks whether the request has been redirected to a different URL.
 
 ## License
 
