@@ -1,13 +1,13 @@
-const http = require('bare-http1')
-const https = require('bare-https')
-const { Readable } = require('bare-stream')
+const http = require('http')
+const https = require('https')
+const { Readable } = require('stream')
 
 const redirectStatuses = [301, 302, 303, 307, 308]
 
 class Response {
   constructor () {
     this.headers = new Map()
-    this.body = new Readable()
+    this.body = Readable.from([])
     this.bodyUsed = false
     this.redirected = false
     this.status = 0
