@@ -28,18 +28,14 @@
     "bare-stream": "^2.1.3"
   },
  "imports": {
-  	"http": {
-	  "bare": "bare-http1",
-	  "default": "http"	
-	},
-  	"https": {
-	  "bare": "bare-https",
-	  "default": "https"	
-	},
-  	"stream": {
-	  "bare": "bare-stream",
-	  "default": "stream"	
-	}
+    "http": {
+      "bare": "bare-http1",
+      "default": "http"	
+    },
+    "https": {
+      "bare": "bare-https",
+      "default": "https"	
+    }
   },
   "devDependencies": {
     "brittle": "^3.3.0",

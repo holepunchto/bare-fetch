@@ -1,13 +1,13 @@
 const http = require('http')
 const https = require('https')
-const { Readable } = require('stream')
+const { Readable } = require('bare-stream')
 
 const redirectStatuses = [301, 302, 303, 307, 308]
 
 class Response {
   constructor () {
     this.headers = new Map()
-    this.body = Readable.from([])
+    this.body = new Readable()
     this.bodyUsed = false
     this.redirected = false
     this.status = 0
@@ -75,8 +75,13 @@ module.exports = function fetch (link) {
 
         result.status = incoming.statusCode
 
+        result.body._read = (callback) => {
+          incoming.resume()
+          callback(null)
+        }
+
         incoming.on('data', (chunk) => {
-          result.body.push(chunk)
+          if (result.body.push(chunk) === false) result.body.pause()
         })
 
         incoming.on('end', () => {
