@@ -1,5 +1,5 @@
-const http = require('bare-http1')
-const https = require('bare-https')
+const http = require('http')
+const https = require('https')
 const { Readable } = require('bare-stream')
 
 const redirectStatuses = [301, 302, 303, 307, 308]
@@ -75,8 +75,13 @@ module.exports = function fetch (link) {
 
         result.status = incoming.statusCode
 
+        result.body._read = (callback) => {
+          incoming.resume()
+          callback(null)
+        }
+
         incoming.on('data', (chunk) => {
-          result.body.push(chunk)
+          if (result.body.push(chunk) === false) incoming.pause()
         })
 
         incoming.on('end', () => {
