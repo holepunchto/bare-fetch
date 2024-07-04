@@ -81,7 +81,7 @@ module.exports = function fetch (link) {
         }
 
         incoming.on('data', (chunk) => {
-          if (result.body.push(chunk) === false) result.body.pause()
+          if (result.body.push(chunk) === false) incoming.pause()
         })
 
         incoming.on('end', () => {
