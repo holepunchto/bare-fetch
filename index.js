@@ -4,6 +4,8 @@ const { Readable } = require('bare-stream')
 
 const redirectStatuses = [301, 302, 303, 307, 308]
 
+const supportedMethods = ['GET', 'POST']
+
 class Response {
   constructor () {
     this.headers = new Map()
@@ -35,7 +37,7 @@ class Response {
   }
 }
 
-module.exports = function fetch (link) {
+module.exports = function fetch (link, opts = {}) {
   return new Promise((resolve, reject) => {
     let redirects = 0
     const redirectsLimit = 20
@@ -64,37 +66,48 @@ module.exports = function fetch (link) {
         return
       }
 
-      const req = protocol.request(target, (incoming) => {
-        if (incoming.headers.location && redirectStatuses.includes(incoming.statusCode)) {
-          redirects++
-          processLink(incoming.headers.location)
-          return
+      if (opts.method && !supportedMethods.includes(opts.method)) {
+        reject(new Error(`The method ${opts.method} is not currently supported by bare-fetch.`))
+        return
+      }
+
+      const req = protocol.request(
+        target,
+        { method: opts.method, headers: opts.headers },
+        (incoming) => {
+          if (incoming.headers.location && redirectStatuses.includes(incoming.statusCode)) {
+            redirects++
+            processLink(incoming.headers.location)
+            return
+          }
+
+          const result = new Response()
+
+          result.status = incoming.statusCode
+
+          result.body._read = (callback) => {
+            incoming.resume()
+            callback(null)
+          }
+
+          incoming.on('data', (chunk) => {
+            if (result.body.push(chunk) === false) incoming.pause()
+          })
+
+          incoming.on('end', () => {
+            result.body.push(null)
+
+            if (redirects > 0) result.redirected = true
+            Object.entries(incoming.headers).forEach(h => result.headers.set(...h))
+
+            resolve(result)
+          })
         }
-
-        const result = new Response()
-
-        result.status = incoming.statusCode
-
-        result.body._read = (callback) => {
-          incoming.resume()
-          callback(null)
-        }
-
-        incoming.on('data', (chunk) => {
-          if (result.body.push(chunk) === false) incoming.pause()
-        })
-
-        incoming.on('end', () => {
-          result.body.push(null)
-
-          if (redirects > 0) result.redirected = true
-          Object.entries(incoming.headers).forEach(h => result.headers.set(...h))
-
-          resolve(result)
-        })
-      })
+      )
 
       req.on('error', (e) => reject(e))
+
+      if (opts.body) req.write(opts.body)
 
       req.end()
     }
