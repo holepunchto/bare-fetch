@@ -4,7 +4,7 @@ const { Readable } = require('bare-stream')
 
 const redirectStatuses = [301, 302, 303, 307, 308]
 
-const supportedMethods = ['GET', 'POST']
+const supportedMethods = ['GET', 'POST', 'PUT']
 
 class Response {
   constructor () {
