@@ -24,6 +24,11 @@ const res = await fetch('https://api.restful-api.dev/objects/7')
 console.log(await res.text())
 ```
 
+### `fetch(link, { method, body, headers })`
+
+Only `'GET'` and `POST ` are currently supported.
+
+
 ### `Class: Response`
 
 #### `response.buffer()`
