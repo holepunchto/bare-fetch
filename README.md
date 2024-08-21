@@ -26,7 +26,7 @@ console.log(await res.text())
 
 ### `fetch(link, { method, body, headers })`
 
-Only `'GET'` and `POST ` are currently supported.
+Only `'GET'`, `'POST'` and `'PUT'` are currently supported.
 
 
 ### `Class: Response`
