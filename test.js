@@ -1,6 +1,6 @@
-const fetch = require('.')
-const http = require('bare-http1')
+const http = require('http')
 const test = require('brittle')
+const fetch = require('.')
 
 test('basic http', async function (t) {
   const server = http.createServer().listen(0)
