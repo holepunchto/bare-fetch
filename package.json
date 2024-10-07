@@ -4,10 +4,23 @@
   "description": "Minimal WHATWG Fetch implementation for Bare",
   "exports": {
     ".": "./index.js",
-    "./package": "./package.json"
+    "./package": "./package.json",
+    "./response": "./lib/response.js",
+    "./headers": "./lib/headers.js"
+  },
+  "imports": {
+    "http": {
+      "bare": "bare-http1",
+      "default": "http"
+    },
+    "https": {
+      "bare": "bare-https",
+      "default": "https"
+    }
   },
   "files": [
-    "index.js"
+    "index.js",
+    "lib"
   ],
   "scripts": {
     "test": "standard && bare test.js"
@@ -26,16 +39,6 @@
     "bare-http1": "^3.5.2",
     "bare-https": "^1.1.0",
     "bare-stream": "^2.1.3"
-  },
-  "imports": {
-    "http": {
-      "bare": "bare-http1",
-      "default": "http"
-    },
-    "https": {
-      "bare": "bare-https",
-      "default": "https"
-    }
   },
   "devDependencies": {
     "brittle": "^3.3.0",

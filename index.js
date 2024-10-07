@@ -1,43 +1,13 @@
 const http = require('http')
 const https = require('https')
-const { Readable } = require('bare-stream')
+const Response = require('./lib/response')
+const Headers = require('./lib/headers')
 
 const redirectStatuses = [301, 302, 303, 307, 308]
 
 const supportedMethods = ['GET', 'POST', 'PUT']
 
-class Response {
-  constructor () {
-    this.headers = new Map()
-    this.body = new Readable()
-    this.bodyUsed = false
-    this.redirected = false
-    this.status = 0
-  }
-
-  async buffer () {
-    if (this.bodyUsed) throw new Error('The body of this response has already been consumed.')
-    this.bodyUsed = true
-
-    const chunks = []
-
-    for await (const chunk of this.body) {
-      chunks.push(chunk)
-    }
-
-    return Buffer.concat(chunks)
-  }
-
-  async text () {
-    return (await this.buffer()).toString('utf8')
-  }
-
-  async json () {
-    return JSON.parse(await this.text())
-  }
-}
-
-module.exports = function fetch (link, opts = {}) {
+module.exports = exports = function fetch (link, opts = {}) {
   return new Promise((resolve, reject) => {
     let redirects = 0
     const redirectsLimit = 20
@@ -115,3 +85,6 @@ module.exports = function fetch (link, opts = {}) {
     processLink(link)
   })
 }
+
+exports.Response = Response
+exports.Headers = Headers
