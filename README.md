@@ -8,31 +8,27 @@ npm i bare-fetch
 
 ## Usage
 
-### `fetch(link)`
-
-`link` must be a string containing an http or https url
-
-The function returns a `Promise` that resolves to a `Response` object .
-
-The Response wraps a `Readable` stream.
-
 ```js
-import fetch from 'bare-fetch'
+const fetch = require('bare-fetch')
 
 const res = await fetch('https://api.restful-api.dev/objects/7')
 
 console.log(await res.text())
 ```
 
-### `fetch(link, { method, body, headers })`
+## API
 
-Only `'GET'`, `'POST'` and `'PUT'` are currently supported.
+#### `const response = await fetch(url[, options])`
 
+### `Response`
 
-### `Class: Response`
+Extends `Readable`.
 
 #### `response.buffer()`
 Consumes the stream and returns a buffer.
+
+#### `response.arrayBuffer()`
+Consumes the stream and returns an array buffer.
 
 #### `response.text()`
 Consumes the stream, parses it as utf8 and returns a string.

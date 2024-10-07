@@ -5,6 +5,7 @@
   "exports": {
     ".": "./index.js",
     "./package": "./package.json",
+    "./errors": "./lib/errors.js",
     "./response": "./lib/response.js",
     "./headers": "./lib/headers.js"
   },
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "brittle": "^3.3.0",
+    "listen-async": "^1.0.0",
     "standard": "^17.1.0"
   }
 }

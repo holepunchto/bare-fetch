@@ -1,149 +1,136 @@
 const http = require('http')
 const test = require('brittle')
+const listen = require('listen-async')
 const fetch = require('.')
 
 test('basic http', async function (t) {
-  const server = http.createServer().listen(0)
-  await waitForServer(server)
+  const server = http.createServer()
+  await listen(server, 0)
+
   const { port } = server.address()
 
-  const bufferSent = Buffer.from('This is the correct message.')
+  const sent = Buffer.from('This is the correct message.')
 
   server.on('request', (req, res) => {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain'
-    })
-    res.write(bufferSent)
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.write(sent)
     res.end()
   })
 
   const res = await fetch(`http://localhost:${port}`)
-  const bufferReceived = await res.buffer()
+  const received = await res.buffer()
 
   t.is(res.status, 200)
   t.is(res.headers.get('content-type'), 'text/plain')
   t.is(res.redirected, false)
-  t.is(Buffer.compare(bufferSent, bufferReceived), 0)
-  await t.exception(res.buffer(), /The body of this response has already been consumed./)
   t.is(res.bodyUsed, true)
+
+  t.alike(sent, received)
+
+  await t.exception(res.buffer(), /BODY_ALREADY_CONSUMED/)
 
   server.close()
 })
 
 test('text method', async function (t) {
-  const server = http.createServer().listen(0)
-  await waitForServer(server)
+  const server = http.createServer()
+  await listen(server, 0)
+
   const { port } = server.address()
 
-  const stringSent = 'This is the correct message.'
+  const sent = 'This is the correct message.'
 
   server.on('request', (req, res) => {
-    res.write(stringSent)
+    res.write(sent)
     res.end()
   })
 
   const res = await fetch(`http://localhost:${port}`)
-  const stringReceived = await res.text()
+  const received = await res.text()
 
-  t.is(stringSent, stringReceived)
-  await t.exception(res.text(), /The body of this response has already been consumed./)
+  t.is(sent, received)
   t.is(res.bodyUsed, true)
+
+  await t.exception(res.text(), /BODY_ALREADY_CONSUMED/)
 
   server.close()
 })
 
 test('json method', async function (t) {
-  const server = http.createServer().listen(0)
-  await waitForServer(server)
+  const server = http.createServer()
+  await listen(server, 0)
+
   const { port } = server.address()
 
-  const objectSent = { a: 1, b: 2, c: 3 }
-  const jsonSent = JSON.stringify(objectSent)
+  const sent = { a: 1, b: 2, c: 3 }
 
   server.on('request', (req, res) => {
-    res.write(jsonSent)
+    res.write(JSON.stringify(sent))
     res.end()
   })
 
   const res = await fetch(`http://localhost:${port}`)
-  const objectReceived = await res.json()
+  const received = await res.json()
 
-  t.alike(objectSent, objectReceived)
-  await t.exception(res.json(), /The body of this response has already been consumed./)
+  t.alike(sent, received)
   t.is(res.bodyUsed, true)
+
+  await t.exception(res.json(), /BODY_ALREADY_CONSUMED/)
 
   server.close()
 })
 
 test('redirect', async function (t) {
-  const server = http.createServer().listen(0)
-  await waitForServer(server)
+  const server = http.createServer()
+  await listen(server, 0)
+
   const { port } = server.address()
 
-  const firstMessage = 'You are being redirected'
-  const lastMessage = 'Destination reached'
-
-  let serverRedirectCounter = 0
+  let redirects = 0
 
   server.on('request', (req, res) => {
-    if (serverRedirectCounter === 0) {
-      res.writeHead(301, {
-        location: `http://localhost:${port}`
-      })
-      res.write(firstMessage)
-      serverRedirectCounter++
+    if (redirects === 0) {
+      redirects++
+
+      res.writeHead(301, { location: `http://localhost:${port}` })
+      res.write('redirecting')
     } else {
-      res.write(lastMessage)
+      res.write('redirected')
     }
+
     res.end()
   })
 
   const res = await fetch(`http://localhost:${port}`)
-  const bufferReceived = await res.buffer()
-  const stringReceived = bufferReceived.toString()
+  const buf = await res.buffer()
 
-  t.is(serverRedirectCounter, 1)
-  t.is(lastMessage, stringReceived)
+  t.is(redirects, 1)
   t.is(res.redirected, true)
+  t.is(buf.toString(), 'redirected')
 
   server.close()
 })
 
-test('errors', async function (t) {
-  await t.exception(fetch('htp://localhost:0'), /You need an http or https link/)
-  await t.exception(fetch('http://lo'), /unknown node or service/)
-  await t.exception(fetch('http://localhost:10000000000'), /INVALID_URL: Invalid URL/)
+test('unknown protocol', async function (t) {
+  await t.exception(fetch('htp://localhost:0'), /UNKNOWN_PROTOCOL/)
+})
 
-  const server = http.createServer().listen(0)
-  await waitForServer(server)
+test('invalid url', async function (t) {
+  await t.exception(fetch('http://localhost:10000000000'), /INVALID_URL/)
+})
+
+test('too many redirects', async function (t) {
+  const server = http.createServer()
+  await listen(server, 0)
+
   const { port } = server.address()
 
-  let serverRedirectCounter = 0
-
   server.on('request', (req, res) => {
-    serverRedirectCounter++
-    res.writeHead(301, {
-      location: `http://localhost:${port}`
-    })
-
+    res.writeHead(301, { location: `http://localhost:${port}` })
     res.end()
   })
 
-  await t.exception(fetch(`http://localhost:${port}`), /Exceeded 20 redirects./)
-  t.is(serverRedirectCounter, 21)
+  await t.exception(fetch(`http://localhost:${port}`), /TOO_MANY_REDIRECTS/)
 
   server.close()
 })
-
-function waitForServer (server) {
-  return new Promise((resolve, reject) => {
-    server.on('listening', done)
-    server.on('error', done)
-
-    function done (error) {
-      server.removeListener('listening', done)
-      server.removeListener('error', done)
-      error ? reject(error) : resolve()
-    }
-  })
-}
