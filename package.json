@@ -5,6 +5,7 @@
   "exports": {
     ".": "./index.js",
     "./package": "./package.json",
+    "./global": "./global.js",
     "./errors": "./lib/errors.js",
     "./response": "./lib/response.js",
     "./headers": "./lib/headers.js"
