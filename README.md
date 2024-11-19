@@ -24,32 +24,45 @@ console.log(await res.text())
 
 Extends `Readable`.
 
-#### `response.buffer()`
-Consumes the stream and returns a buffer.
-
-#### `response.arrayBuffer()`
-Consumes the stream and returns an array buffer.
-
-#### `response.text()`
-Consumes the stream, parses it as utf8 and returns a string.
-
-#### `response.json() `
-Consumes the stream, parses it as json and returns a js object.
-
 #### `response.headers`
-The headers on the response.
+
+The response headers.
 
 #### `response.body`
-The `Readable` stream wrapped by the response.
+
+The `Readable` body stream.
 
 #### `response.bodyUsed`
-A boolean property that tracks whether the stream has already been consumed.
+
+Whether or not the stream has already been consumed.
 
 #### `response.status`
-The http status code of the response.
+
+The HTTP status code of the response.
 
 #### `response.redirected`
-A boolean property that tracks whether the request has been redirected to a different URL.
+
+Whether or not the request has been redirected to a different URL.
+
+#### `response.buffer()`
+
+Consumes the stream and returns a `Buffer`.
+
+#### `response.bytes()`
+
+Consumes the stream and returns a `Uint8Array`.
+
+#### `response.arrayBuffer()`
+
+Consumes the stream and returns an `ArrayBuffer`.
+
+#### `response.text()`
+
+Consumes the stream and returns a UTF-8 string.
+
+#### `response.json() `
+
+Consumes the stream and returns a JSON value.
 
 ## License
 
