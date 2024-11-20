@@ -3,7 +3,9 @@ const test = require('brittle')
 const listen = require('listen-async')
 const fetch = require('.')
 
-test('basic http', async function (t) {
+const { Response } = fetch
+
+test('basic', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
 
@@ -32,7 +34,7 @@ test('basic http', async function (t) {
   server.close()
 })
 
-test('text method', async function (t) {
+test('text', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
 
@@ -56,7 +58,7 @@ test('text method', async function (t) {
   server.close()
 })
 
-test('json method', async function (t) {
+test('json', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
 
@@ -80,7 +82,7 @@ test('json method', async function (t) {
   server.close()
 })
 
-test('redirect', async function (t) {
+test('redirect', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
 
@@ -111,15 +113,15 @@ test('redirect', async function (t) {
   server.close()
 })
 
-test('unknown protocol', async function (t) {
+test('unknown protocol', async (t) => {
   await t.exception(fetch('htp://localhost:0'), /UNKNOWN_PROTOCOL/)
 })
 
-test('invalid url', async function (t) {
+test('invalid url', async (t) => {
   await t.exception(fetch('http://localhost:10000000000'), /INVALID_URL/)
 })
 
-test('too many redirects', async function (t) {
+test('too many redirects', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
 
@@ -133,4 +135,11 @@ test('too many redirects', async function (t) {
   await t.exception(fetch(`http://localhost:${port}`), /TOO_MANY_REDIRECTS/)
 
   server.close()
+})
+
+test('response constructor', async (t) => {
+  const res = new Response('response', { status: 123 })
+
+  t.is(res.status, 123)
+  t.is(await res.text(), 'response')
 })
