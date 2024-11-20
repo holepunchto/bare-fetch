@@ -22,8 +22,6 @@ console.log(await res.text())
 
 ### `Response`
 
-Extends `Readable`.
-
 #### `response.headers`
 
 The response headers.
