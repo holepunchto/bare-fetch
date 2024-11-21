@@ -1,5 +1,6 @@
 const http = require('http')
 const https = require('https')
+const { ReadableStream } = require('bare-stream/web')
 const Response = require('./lib/response')
 const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
@@ -39,28 +40,24 @@ module.exports = exports = function fetch (url, opts = {}) {
           return process(res.headers.location).then(resolve, reject)
         }
 
-        const result = new Response()
+        const body = new ReadableStream({
+          start (controller) {
+            res
+              .on('data', (chunk) => controller.enqueue(chunk))
+              .on('end', () => {
+                controller.close()
 
+                if (redirects > 0) result.redirected = true
+
+                Object.entries(res.headers).forEach(h => result.headers.set(...h))
+
+                resolve(result)
+              })
+          }
+        })
+
+        const result = new Response(body)
         result.status = res.statusCode
-
-        result.body._read = (cb) => {
-          res.resume()
-          cb(null)
-        }
-
-        res
-          .on('data', (chunk) => {
-            if (result.body.push(chunk) === false) res.pause()
-          })
-          .on('end', () => {
-            result.body.push(null)
-
-            if (redirects > 0) result.redirected = true
-
-            Object.entries(res.headers).forEach(h => result.headers.set(...h))
-
-            resolve(result)
-          })
       })
 
       req.on('error', (e) => reject(errors.NETWORK_ERROR('Network error', e)))
