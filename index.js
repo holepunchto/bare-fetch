@@ -5,7 +5,7 @@ const Response = require('./lib/response')
 const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
 
-const defaultStrategy = new ByteLengthQueuingStrategy()
+const defaultStrategy = new ByteLengthQueuingStrategy({ highWaterMark: 65536 })
 
 module.exports = exports = function fetch(url, opts = {}) {
   let redirects = 0
