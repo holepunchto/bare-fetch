@@ -42,6 +42,11 @@ module.exports = exports = function fetch(url, opts = {}) {
         const result = new Response()
 
         result.status = res.statusCode
+        result.redirected = redirects > 0
+
+        for (const [name, value] of Object.entries(res.headers)) {
+          result.headers.set(name, value)
+        }
 
         result.body._read = (cb) => {
           res.resume()
@@ -54,13 +59,9 @@ module.exports = exports = function fetch(url, opts = {}) {
           })
           .on('end', () => {
             result.body.push(null)
-
-            if (redirects > 0) result.redirected = true
-
-            Object.entries(res.headers).forEach((h) => result.headers.set(...h))
-
-            resolve(result)
           })
+
+        resolve(result)
       })
 
       req.on('error', (e) => reject(errors.NETWORK_ERROR('Network error', e)))
