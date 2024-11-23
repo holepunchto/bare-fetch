@@ -26,7 +26,7 @@
     "lib"
   ],
   "scripts": {
-    "test": "standard && bare test.js"
+    "test": "prettier . --check && bare test.js"
   },
   "repository": {
     "type": "git",
@@ -46,6 +46,7 @@
   "devDependencies": {
     "brittle": "^3.3.0",
     "listen-async": "^1.0.0",
-    "standard": "^17.1.0"
+    "prettier": "^3.3.3",
+    "prettier-config-standard": "^7.0.0"
   }
 }

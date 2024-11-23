@@ -5,12 +5,12 @@ const Response = require('./lib/response')
 const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
 
-module.exports = exports = function fetch (url, opts = {}) {
+module.exports = exports = function fetch(url, opts = {}) {
   let redirects = 0
 
   return process(url)
 
-  async function process (url) {
+  async function process(url) {
     if (redirects > 20) {
       throw errors.TOO_MANY_REDIRECTS('Redirect count exceeded')
     }
@@ -41,23 +41,23 @@ module.exports = exports = function fetch (url, opts = {}) {
         }
 
         const body = new ReadableStream({
-          start (controller) {
+          start(controller) {
             res
               .on('data', (chunk) => controller.enqueue(chunk))
-              .on('end', () => {
-                controller.close()
-
-                if (redirects > 0) result.redirected = true
-
-                Object.entries(res.headers).forEach(h => result.headers.set(...h))
-
-                resolve(result)
-              })
+              .on('end', () => controller.close())
           }
         })
 
         const result = new Response(body)
+
         result.status = res.statusCode
+        result.redirected = redirects > 0
+
+        for (const [name, value] of Object.entries(res.headers)) {
+          result.headers.set(name, value)
+        }
+
+        resolve(result)
       })
 
       req.on('error', (e) => reject(errors.NETWORK_ERROR('Network error', e)))
@@ -73,6 +73,12 @@ exports.Response = Response
 exports.Headers = Headers
 
 // https://fetch.spec.whatwg.org/#redirect-status
-function isRedirectStatus (status) {
-  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308
+function isRedirectStatus(status) {
+  return (
+    status === 301 ||
+    status === 302 ||
+    status === 303 ||
+    status === 307 ||
+    status === 308
+  )
 }
