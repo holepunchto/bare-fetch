@@ -26,14 +26,6 @@ console.log(await res.text())
 
 The response headers.
 
-#### `response.body`
-
-The `Readable` body stream.
-
-#### `response.bodyUsed`
-
-Whether or not the stream has already been consumed.
-
 #### `response.status`
 
 The HTTP status code of the response.
@@ -41,6 +33,14 @@ The HTTP status code of the response.
 #### `response.redirected`
 
 Whether or not the request has been redirected to a different URL.
+
+#### `response.body`
+
+The response body stream.
+
+#### `response.bodyUsed`
+
+Whether or not the stream has already been consumed.
 
 #### `response.buffer()`
 
