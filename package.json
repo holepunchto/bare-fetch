@@ -41,7 +41,7 @@
   "dependencies": {
     "bare-http1": "^3.5.2",
     "bare-https": "^1.1.0",
-    "bare-stream": "^2.1.3"
+    "bare-stream": "^2.4.1"
   },
   "devDependencies": {
     "brittle": "^3.3.0",

@@ -1,8 +1,11 @@
 const http = require('http')
 const https = require('https')
+const { ReadableStream, ByteLengthQueuingStrategy } = require('bare-stream/web')
 const Response = require('./lib/response')
 const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
+
+const defaultStrategy = new ByteLengthQueuingStrategy({ highWaterMark: 65536 })
 
 module.exports = exports = function fetch(url, opts = {}) {
   let redirects = 0
@@ -39,7 +42,27 @@ module.exports = exports = function fetch(url, opts = {}) {
           return process(res.headers.location).then(resolve, reject)
         }
 
-        const result = new Response()
+        const body = new ReadableStream(
+          {
+            start(controller) {
+              res
+                .on('data', (chunk) => {
+                  controller.enqueue(chunk)
+
+                  if (controller.desiredSize <= 0) res.pause()
+                })
+                .on('end', () => {
+                  controller.close()
+                })
+            },
+            pull() {
+              res.resume()
+            }
+          },
+          defaultStrategy
+        )
+
+        const result = new Response(body)
 
         result.status = res.statusCode
         result.redirected = redirects > 0
@@ -47,19 +70,6 @@ module.exports = exports = function fetch(url, opts = {}) {
         for (const [name, value] of Object.entries(res.headers)) {
           result.headers.set(name, value)
         }
-
-        result.body._read = (cb) => {
-          res.resume()
-          cb(null)
-        }
-
-        res
-          .on('data', (chunk) => {
-            if (result.body.push(chunk) === false) res.pause()
-          })
-          .on('end', () => {
-            result.body.push(null)
-          })
 
         resolve(result)
       })
