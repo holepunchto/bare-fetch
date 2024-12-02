@@ -66,7 +66,6 @@ module.exports = exports = function fetch(url, opts = {}) {
 
         result.status = res.statusCode
         result.redirected = redirects > 0
-        if (result.status > 199 && result.status < 300) result.ok = true
 
         for (const [name, value] of Object.entries(res.headers)) {
           result.headers.set(name, value)
