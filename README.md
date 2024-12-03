@@ -1,6 +1,6 @@
 # bare-fetch
 
-Minimal WHATWG Fetch implementation for Bare.
+WHATWG Fetch implementation for Bare.
 
 ```
 npm i bare-fetch
