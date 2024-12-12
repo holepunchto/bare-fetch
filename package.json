@@ -11,16 +11,6 @@
     "./response": "./lib/response.js",
     "./headers": "./lib/headers.js"
   },
-  "imports": {
-    "http": {
-      "bare": "bare-http1",
-      "default": "http"
-    },
-    "https": {
-      "bare": "bare-https",
-      "default": "https"
-    }
-  },
   "files": [
     "index.js",
     "global.js",

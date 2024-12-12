@@ -1,4 +1,4 @@
-const http = require('http')
+const http = require('bare-http1')
 const test = require('brittle')
 const listen = require('listen-async')
 const fetch = require('.')

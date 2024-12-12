@@ -1,5 +1,5 @@
-const http = require('http')
-const https = require('https')
+const http = require('bare-http1')
+const https = require('bare-https')
 const { ReadableStream } = require('bare-stream/web')
 const Response = require('./lib/response')
 const Headers = require('./lib/headers')
