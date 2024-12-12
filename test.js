@@ -29,7 +29,7 @@ test('basic', async (t) => {
 
   t.alike(sent, received)
 
-  await t.exception(res.buffer(), /BODY_ALREADY_CONSUMED/)
+  await t.exception(res.buffer(), /BODY_UNUSABLE/)
 
   server.close()
 })
@@ -53,7 +53,7 @@ test('text', async (t) => {
   t.is(sent, received)
   t.is(res.bodyUsed, true)
 
-  await t.exception(res.text(), /BODY_ALREADY_CONSUMED/)
+  await t.exception(res.text(), /BODY_UNUSABLE/)
 
   server.close()
 })
@@ -77,7 +77,7 @@ test('json', async (t) => {
   t.alike(sent, received)
   t.is(res.bodyUsed, true)
 
-  await t.exception(res.json(), /BODY_ALREADY_CONSUMED/)
+  await t.exception(res.json(), /BODY_UNUSABLE/)
 
   server.close()
 })
