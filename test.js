@@ -22,6 +22,7 @@ test('basic', async (t) => {
   const res = await fetch(`http://localhost:${port}`)
   const received = await res.buffer()
 
+  t.is(res.url, `http://localhost:${port}/`)
   t.is(res.status, 200)
   t.is(res.headers.get('content-type'), 'text/plain')
   t.is(res.redirected, false)
@@ -91,10 +92,10 @@ test('redirect', async (t) => {
   let redirects = 0
 
   server.on('request', (req, res) => {
-    if (redirects === 0) {
-      redirects++
-
-      res.writeHead(301, { location: `http://localhost:${port}` })
+    if (redirects < 4) {
+      res.writeHead(301, {
+        location: `http://localhost:${port}/${++redirects}`
+      })
       res.write('redirecting')
     } else {
       res.write('redirected')
@@ -106,7 +107,7 @@ test('redirect', async (t) => {
   const res = await fetch(`http://localhost:${port}`)
   const buf = await res.buffer()
 
-  t.is(redirects, 1)
+  t.is(res.url, `http://localhost:${port}/4`)
   t.is(res.redirected, true)
   t.is(buf.toString(), 'redirected')
 

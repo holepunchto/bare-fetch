@@ -40,9 +40,9 @@
   },
   "homepage": "https://github.com/holepunchto/bare-fetch#readme",
   "dependencies": {
-    "bare-http1": "^4.0.0",
+    "bare-http1": "^4.0.2",
     "bare-https": "^2.0.0",
-    "bare-stream": "^2.4.1"
+    "bare-stream": "^2.6.0"
   },
   "devDependencies": {
     "brittle": "^3.3.0",

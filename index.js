@@ -1,27 +1,36 @@
 const http = require('http')
 const https = require('https')
-const { ReadableStream, ByteLengthQueuingStrategy } = require('bare-stream/web')
+const { ReadableStream } = require('bare-stream/web')
 const Response = require('./lib/response')
 const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
 
-const defaultStrategy = new ByteLengthQueuingStrategy({ highWaterMark: 65536 })
+// https://fetch.spec.whatwg.org/#dom-global-fetch
+module.exports = exports = function fetch(input, init = {}) {
+  let resolve
+  let reject
 
-module.exports = exports = function fetch(url, opts = {}) {
-  let redirects = 0
+  const promise = new Promise((res, rej) => {
+    resolve = res
+    reject = rej
+  })
 
-  return process(url)
+  const result = new Response()
 
-  async function process(url) {
-    if (redirects > 20) {
-      throw errors.TOO_MANY_REDIRECTS('Redirect count exceeded')
+  process(input)
+
+  return promise
+
+  function process(input) {
+    if (result._urls.length > 20) {
+      return reject(errors.TOO_MANY_REDIRECTS('Redirect count exceeded'))
     }
 
     let target
     try {
-      target = new URL(url)
+      target = new URL(input)
     } catch (err) {
-      throw errors.INVALID_URL('Invalid URL', err)
+      return reject(errors.INVALID_URL('Invalid URL', err))
     }
 
     let protocol
@@ -31,55 +40,30 @@ module.exports = exports = function fetch(url, opts = {}) {
     } else if (target.protocol === 'https:') {
       protocol = https
     } else {
-      throw errors.UNKNOWN_PROTOCOL('Unknown protocol')
+      return reject(errors.UNKNOWN_PROTOCOL('Unknown protocol'))
     }
 
-    return new Promise((resolve, reject) => {
-      const req = protocol.request(target, opts, (res) => {
-        if (res.headers.location && isRedirectStatus(res.statusCode)) {
-          redirects++
+    result._urls.push(target)
 
-          return process(res.headers.location).then(resolve, reject)
-        }
+    const req = protocol.request(target, init, (res) => {
+      if (res.headers.location && isRedirectStatus(res.statusCode)) {
+        return process(res.headers.location)
+      }
 
-        const body = new ReadableStream(
-          {
-            start(controller) {
-              res
-                .on('data', (chunk) => {
-                  controller.enqueue(chunk)
+      result._body = new ReadableStream(res)
+      result._status = res.statusCode
+      result._statusText = res.statusMessage
 
-                  if (controller.desiredSize <= 0) res.pause()
-                })
-                .on('end', () => {
-                  controller.close()
-                })
-            },
-            pull() {
-              res.resume()
-            }
-          },
-          defaultStrategy
-        )
+      for (const [name, value] of Object.entries(res.headers)) {
+        result._headers.set(name, value)
+      }
 
-        const result = new Response(body)
-
-        result.status = res.statusCode
-        result.redirected = redirects > 0
-
-        for (const [name, value] of Object.entries(res.headers)) {
-          result.headers.set(name, value)
-        }
-
-        resolve(result)
-      })
-
-      req.on('error', (e) => reject(errors.NETWORK_ERROR('Network error', e)))
-
-      if (opts.body) req.write(opts.body)
-
-      req.end()
+      resolve(result)
     })
+
+    req
+      .on('error', (e) => reject(errors.NETWORK_ERROR('Network error', e)))
+      .end(init.body)
   }
 }
 
