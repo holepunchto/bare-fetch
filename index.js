@@ -6,7 +6,7 @@ const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
 
 // https://fetch.spec.whatwg.org/#dom-global-fetch
-module.exports = exports = function fetch(input, init = {}) {
+module.exports = exports = function fetch(input, init = { headers: {} }) {
   let resolve
   let reject
 
@@ -44,6 +44,8 @@ module.exports = exports = function fetch(input, init = {}) {
     }
 
     result._urls.push(target)
+
+    if (!init.headers['user-agent']) init.headers['user-agent'] = 'bare'
 
     const req = protocol.request(target, init, (res) => {
       if (res.headers.location && isRedirectStatus(res.statusCode)) {
