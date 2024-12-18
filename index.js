@@ -45,7 +45,10 @@ module.exports = exports = function fetch(input, init = { headers: {} }) {
 
     result._urls.push(target)
 
-    if (!init.headers['user-agent']) init.headers['user-agent'] = 'bare'
+    const hasUserAgent = Object.keys(init.headers).some(
+      (header) => header.toLowerCase() === 'user-agent'
+    )
+    if (!hasUserAgent) init.headers['user-agent'] = 'bare'
 
     const req = protocol.request(target, init, (res) => {
       if (res.headers.location && isRedirectStatus(res.statusCode)) {
