@@ -8,6 +8,7 @@
     "./global": "./global.js",
     "./errors": "./lib/errors.js",
     "./body": "./lib/body.js",
+    "./request": "./lib/request.js",
     "./response": "./lib/response.js",
     "./headers": "./lib/headers.js"
   },

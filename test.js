@@ -6,6 +6,8 @@ const fetch = require('.')
 const { Response } = fetch
 
 test('basic', async (t) => {
+  t.plan(8)
+
   const server = http.createServer()
   await listen(server, 0)
 
@@ -14,6 +16,11 @@ test('basic', async (t) => {
   const sent = Buffer.from('This is the correct message.')
 
   server.on('request', (req, res) => {
+    const ua = req.headers['user-agent']
+
+    t.comment(ua)
+    t.ok(ua)
+
     res.writeHead(200, { 'Content-Type': 'text/plain' })
     res.write(sent)
     res.end()
