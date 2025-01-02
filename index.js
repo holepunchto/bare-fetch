@@ -1,12 +1,13 @@
 const http = require('bare-http1')
 const https = require('bare-https')
 const { ReadableStream } = require('bare-stream/web')
+const Request = require('./lib/request')
 const Response = require('./lib/response')
 const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
 
 // https://fetch.spec.whatwg.org/#dom-global-fetch
-module.exports = exports = function fetch(input, init = { headers: {} }) {
+module.exports = exports = function fetch(input, init = {}) {
   let resolve
   let reject
 
@@ -15,63 +16,78 @@ module.exports = exports = function fetch(input, init = { headers: {} }) {
     reject = rej
   })
 
-  const result = new Response()
+  const response = new Response()
 
   process(input)
 
   return promise
 
-  function process(input) {
-    if (result._urls.length > 20) {
-      return reject(errors.TOO_MANY_REDIRECTS('Redirect count exceeded'))
+  async function process(input) {
+    let request
+    try {
+      request = new Request(input, init)
+    } catch (err) {
+      return reject(err)
     }
 
-    let target
-    try {
-      target = new URL(input)
-    } catch (err) {
-      return reject(errors.INVALID_URL('Invalid URL', err))
+    if (response._urls.length > 20) {
+      return reject(errors.TOO_MANY_REDIRECTS('Redirect count exceeded'))
     }
 
     let protocol
 
-    if (target.protocol === 'http:') {
+    if (request._url.protocol === 'http:') {
       protocol = http
-    } else if (target.protocol === 'https:') {
+    } else if (request._url.protocol === 'https:') {
       protocol = https
     } else {
       return reject(errors.UNKNOWN_PROTOCOL('Unknown protocol'))
     }
 
-    result._urls.push(target)
+    response._urls.push(request._url)
 
-    const hasUserAgent = Object.keys(init.headers).some(
-      (header) => header.toLowerCase() === 'user-agent'
+    if (!request._headers.has('user-agent')) {
+      request._headers.set('user-agent', `Bare/${Bare.version.substring(1)}`)
+    }
+
+    const req = protocol.request(
+      request._url,
+      {
+        method: request._method,
+        headers: Object.fromEntries(request._headers)
+      },
+      (res) => {
+        if (res.headers.location && isRedirectStatus(res.statusCode)) {
+          return process(res.headers.location)
+        }
+
+        response._body = new ReadableStream(res)
+        response._status = res.statusCode
+        response._statusText = res.statusMessage
+
+        for (const [name, value] of Object.entries(res.headers)) {
+          response._headers.set(name, value)
+        }
+
+        resolve(response)
+      }
     )
-    if (!hasUserAgent) init.headers['user-agent'] = 'bare'
 
-    const req = protocol.request(target, init, (res) => {
-      if (res.headers.location && isRedirectStatus(res.statusCode)) {
-        return process(res.headers.location)
+    req.on('error', (err) => reject(errors.NETWORK_ERROR('Network error', err)))
+
+    try {
+      if (request._body) {
+        for await (const data of request._body) req.write(data)
       }
 
-      result._body = new ReadableStream(res)
-      result._status = res.statusCode
-      result._statusText = res.statusMessage
-
-      for (const [name, value] of Object.entries(res.headers)) {
-        result._headers.set(name, value)
-      }
-
-      resolve(result)
-    })
-
-    req
-      .on('error', (e) => reject(errors.NETWORK_ERROR('Network error', e)))
-      .end(init.body)
+      req.end()
+    } catch (err) {
+      return reject(errors.NETWORK_ERROR('Network error', err))
+    }
   }
 }
 
+exports.Request = Request
 exports.Response = Response
 exports.Headers = Headers
 
