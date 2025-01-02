@@ -1,6 +1,6 @@
 {
   "name": "bare-fetch",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "description": "WHATWG Fetch implementation for Bare",
   "exports": {
     ".": "./index.js",
