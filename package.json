@@ -3,18 +3,41 @@
   "version": "2.2.0",
   "description": "WHATWG Fetch implementation for Bare",
   "exports": {
-    ".": "./index.js",
     "./package": "./package.json",
-    "./global": "./global.js",
-    "./errors": "./lib/errors.js",
-    "./body": "./lib/body.js",
-    "./request": "./lib/request.js",
-    "./response": "./lib/response.js",
-    "./headers": "./lib/headers.js"
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./global": {
+      "types": "./lib/global.d.ts",
+      "default": "./lib/global.js"
+    },
+    "./errors": {
+      "types": "./lib/errors.d.ts",
+      "default": "./lib/errors.js"
+    },
+    "./body": {
+      "types": "./lib/body.d.ts",
+      "default": "./lib/body.js"
+    },
+    "./request": {
+      "types": "./lib/request.d.ts",
+      "default": "./lib/request.js"
+    },
+    "./response": {
+      "types": "./lib/response.d.ts",
+      "default": "./lib/response.js"
+    },
+    "./headers": {
+      "types": "./lib/headers.d.ts",
+      "default": "./lib/headers.js"
+    }
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "global.js",
+    "global.d.ts",
     "lib"
   ],
   "scripts": {
@@ -36,9 +59,18 @@
     "bare-stream": "^2.6.0"
   },
   "devDependencies": {
+    "bare-buffer": "^3.0.2",
     "brittle": "^3.3.0",
     "listen-async": "^1.0.0",
     "prettier": "^3.3.3",
     "prettier-config-standard": "^7.0.0"
+  },
+  "peerDependencies": {
+    "bare-buffer": "*"
+  },
+  "peerDependenciesMeta": {
+    "bare-buffer": {
+      "optional": true
+    }
   }
 }
