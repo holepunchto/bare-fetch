@@ -22,7 +22,7 @@ module.exports = exports = function fetch(input, init = {}) {
 
   return promise
 
-  async function process(input) {
+  async function process(input, crossOriginRedirect = false) {
     let request
     try {
       request = new Request(input, init)
@@ -50,6 +50,11 @@ module.exports = exports = function fetch(input, init = {}) {
       request._headers.set('user-agent', `Bare/${Bare.version.substring(1)}`)
     }
 
+    if (crossOriginRedirect) {
+      request.headers.delete('authorization')
+      request.headers.delete('www-authenticate')
+    }
+
     const req = protocol.request(
       request._url,
       {
@@ -58,7 +63,10 @@ module.exports = exports = function fetch(input, init = {}) {
       },
       (res) => {
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
-          return process(res.headers.location)
+          const crossOriginRedirect =
+            request._url.origin !== new URL(res.headers.location).origin
+
+          return process(res.headers.location, crossOriginRedirect)
         }
 
         response._body = new ReadableStream(res)
