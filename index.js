@@ -107,6 +107,6 @@ function isRedirectStatus(status) {
 }
 
 // https://html.spec.whatwg.org/multipage/browsers.html#same-origin
-function isSameOrigin(urlA, urlB) {
-  return urlA.protocol === urlB.protocol && urlA.host === urlB.host
+function isSameOrigin(a, b) {
+  return a.protocol === b.protocol && a.host === b.host
 }
