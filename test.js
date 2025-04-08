@@ -145,6 +145,41 @@ test('too many redirects', async (t) => {
   server.close()
 })
 
+test('strip auth headers from cross-origin redirects', async (t) => {
+  const sub = t.test()
+  sub.plan(2)
+
+  const serverA = http.createServer()
+  await listen(serverA)
+  const { port: portA } = serverA.address()
+
+  const serverB = http.createServer()
+  await listen(serverB)
+  const { port: portB } = serverB.address()
+
+  serverA.on('request', (req, res) => {
+    sub.ok('authorization' in req.headers)
+
+    res.writeHead(301, { location: `http://localhost:${portB}` })
+    res.end()
+  })
+
+  serverB.on('request', (req, res) => {
+    sub.absent('authorization' in req.headers)
+
+    res.end()
+  })
+
+  await fetch(`http://localhost:${portA}`, {
+    headers: { Authorization: 'Bearer Bare' }
+  })
+
+  await sub
+
+  serverA.close()
+  serverB.close()
+})
+
 test('response constructor', async (t) => {
   const res = new Response('response', { status: 123 })
 

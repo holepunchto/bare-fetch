@@ -22,7 +22,7 @@ module.exports = exports = function fetch(input, init = {}) {
 
   return promise
 
-  async function process(input) {
+  async function process(input, origin = null) {
     let request
     try {
       request = new Request(input, init)
@@ -32,6 +32,10 @@ module.exports = exports = function fetch(input, init = {}) {
 
     if (response._urls.length > 20) {
       return reject(errors.TOO_MANY_REDIRECTS('Redirect count exceeded'))
+    }
+
+    if (origin && !isSameOrigin(request._url, origin)) {
+      request.headers.delete('authorization')
     }
 
     let protocol
@@ -58,7 +62,7 @@ module.exports = exports = function fetch(input, init = {}) {
       },
       (res) => {
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
-          return process(res.headers.location)
+          return process(res.headers.location, request._url)
         }
 
         response._body = new ReadableStream(res)
@@ -100,4 +104,9 @@ function isRedirectStatus(status) {
     status === 307 ||
     status === 308
   )
+}
+
+// https://html.spec.whatwg.org/multipage/browsers.html#same-origin
+function isSameOrigin(a, b) {
+  return a.protocol === b.protocol && a.host === b.host
 }
