@@ -22,7 +22,7 @@ module.exports = exports = function fetch(input, init = {}) {
 
   return promise
 
-  async function process(input, crossOriginRedirect = false) {
+  async function process(input, origin = null) {
     let request
     try {
       request = new Request(input, init)
@@ -32,6 +32,10 @@ module.exports = exports = function fetch(input, init = {}) {
 
     if (response._urls.length > 20) {
       return reject(errors.TOO_MANY_REDIRECTS('Redirect count exceeded'))
+    }
+
+    if (origin && !isSameOrigin(request._url, origin)) {
+      request.headers.delete('authorization')
     }
 
     let protocol
@@ -50,11 +54,6 @@ module.exports = exports = function fetch(input, init = {}) {
       request._headers.set('user-agent', `Bare/${Bare.version.substring(1)}`)
     }
 
-    if (crossOriginRedirect) {
-      request.headers.delete('authorization')
-      request.headers.delete('www-authenticate')
-    }
-
     const req = protocol.request(
       request._url,
       {
@@ -63,10 +62,7 @@ module.exports = exports = function fetch(input, init = {}) {
       },
       (res) => {
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
-          const crossOriginRedirect =
-            request._url.origin !== new URL(res.headers.location).origin
-
-          return process(res.headers.location, crossOriginRedirect)
+          return process(res.headers.location, request._url)
         }
 
         response._body = new ReadableStream(res)
@@ -108,4 +104,9 @@ function isRedirectStatus(status) {
     status === 307 ||
     status === 308
   )
+}
+
+// https://html.spec.whatwg.org/multipage/browsers.html#same-origin
+function isSameOrigin(urlA, urlB) {
+  return urlA.protocol === urlB.protocol && urlA.host === urlB.host
 }
