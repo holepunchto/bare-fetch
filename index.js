@@ -1,6 +1,6 @@
 const http = require('bare-http1')
 const https = require('bare-https')
-const { ReadableStream } = require('bare-stream/web')
+const { extractBody, fullyReadBody } = require('./lib/body')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
 const Headers = require('./lib/headers')
@@ -60,12 +60,14 @@ module.exports = exports = function fetch(input, init = {}) {
         method: request._method,
         headers: Object.fromEntries(request._headers)
       },
-      (res) => {
+      async (res) => {
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
           return process(res.headers.location, request._url)
         }
 
-        response._body = new ReadableStream(res)
+        const bytes = await fullyReadBody(extractBody(res))
+        response._body = extractBody(bytes)
+
         response._status = res.statusCode
         response._statusText = res.statusMessage
 
