@@ -18,9 +18,4 @@ declare class Body {
   constructor(body: unknown)
 }
 
-declare namespace Body {
-  export function extractBody(obj: unknown): ReadableStream | null
-  export function fullyReadBody(stream: ReadableStream): Buffer
-}
-
 export = Body
