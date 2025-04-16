@@ -66,6 +66,8 @@ module.exports = exports = function fetch(input, init = {}) {
         }
 
         response._body = new ReadableStream(res)
+        response.unref()
+
         response._status = res.statusCode
         response._statusText = res.statusMessage
 
