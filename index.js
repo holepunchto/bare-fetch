@@ -1,5 +1,6 @@
 const http = require('bare-http1')
 const https = require('bare-https')
+const { Readable } = require('bare-stream')
 const { ReadableStream } = require('bare-stream/web')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
@@ -65,7 +66,11 @@ module.exports = exports = function fetch(input, init = {}) {
           return process(res.headers.location, request._url)
         }
 
-        response._body = new ReadableStream(res)
+        const stream = new Readable()
+        res.on('data', (data) => stream.push(data))
+        res.on('end', () => stream.push(null))
+
+        response._body = new ReadableStream(stream)
         response._status = res.statusCode
         response._statusText = res.statusMessage
 
