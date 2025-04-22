@@ -4,6 +4,7 @@ const { Readable } = require('bare-stream')
 const { ReadableStream } = require('bare-stream/web')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
+const ResponseStream = require('./lib/response-stream')
 const Headers = require('./lib/headers')
 const errors = require('./lib/errors')
 
@@ -66,34 +67,7 @@ module.exports = exports = function fetch(input, init = {}) {
           return process(res.headers.location, request._url)
         }
 
-        res.socket.unref()
-
-        function open(cb) {
-          res.socket.ref()
-          cb(null)
-        }
-
-        function read() {
-          const data = res.read()
-          if (data !== null) this.push(data)
-        }
-
-        function end() {
-          this.push(null)
-        }
-
-        function error(err) {
-          this.destroy(err)
-        }
-
-        const stream = new Readable({ open, read })
-
-        res
-          .on('readable', read.bind(stream))
-          .on('end', end.bind(stream))
-          .on('error', error.bind(stream))
-
-        response._body = new ReadableStream(stream)
+        response._body = new ReadableStream(new ResponseStream(res))
         response._status = res.statusCode
         response._statusText = res.statusMessage
 
