@@ -54,6 +54,7 @@
   },
   "homepage": "https://github.com/holepunchto/bare-fetch#readme",
   "dependencies": {
+    "bare-form-data": "^1.1.3",
     "bare-http1": "^4.0.2",
     "bare-https": "^2.0.0",
     "bare-stream": "^2.6.0"

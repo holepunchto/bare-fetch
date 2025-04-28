@@ -1,6 +1,7 @@
-const http = require('bare-http1')
 const test = require('brittle')
 const listen = require('listen-async')
+const http = require('bare-http1')
+const FormData = require('bare-form-data')
 const fetch = require('.')
 
 const { Response } = fetch
@@ -86,6 +87,43 @@ test('json', async (t) => {
   t.is(res.bodyUsed, true)
 
   await t.exception(res.json(), /BODY_UNUSABLE/)
+
+  server.close()
+})
+
+test('post form data', async (t) => {
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', async (req, res) => {
+    const type = req.headers['content-type']
+
+    t.ok(type.startsWith('multipart/form-data'))
+
+    let body = ''
+
+    for await (const chunk of req) {
+      body += chunk.toString()
+    }
+
+    t.alike(
+      body
+        .trim()
+        .split(/(?:\r\n)+/g)
+        .slice(1, -1),
+      ['Content-Disposition: form-data; name="text"', 'Hello world']
+    )
+
+    res.end()
+  })
+
+  const body = new FormData()
+
+  body.append('text', 'Hello world')
+
+  await fetch(`http://localhost:${port}`, { method: 'POST', body })
 
   server.close()
 })
