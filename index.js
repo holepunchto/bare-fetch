@@ -1,6 +1,5 @@
 const http = require('bare-http1')
 const https = require('bare-https')
-const { Readable } = require('bare-stream')
 const { ReadableStream } = require('bare-stream/web')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
@@ -54,6 +53,10 @@ module.exports = exports = function fetch(input, init = {}) {
 
     if (!request._headers.has('user-agent')) {
       request._headers.set('user-agent', `Bare/${Bare.version.substring(1)}`)
+    }
+
+    if (!request._headers.has('content-type') && request._type) {
+      request._headers.set('content-type', request._type)
     }
 
     const req = protocol.request(
