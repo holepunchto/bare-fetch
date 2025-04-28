@@ -1,6 +1,6 @@
 {
   "name": "bare-fetch",
-  "version": "2.2.2",
+  "version": "2.3.0",
   "description": "WHATWG Fetch implementation for Bare",
   "exports": {
     "./package": "./package.json",
