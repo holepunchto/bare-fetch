@@ -67,7 +67,14 @@ module.exports = exports = function fetch(input, init = {}) {
       },
       (res) => {
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
-          return process(res.headers.location, request._url)
+          let url
+          try {
+            url = new URL(res.headers.location, request._url)
+          } catch (err) {
+            return reject(errors.INVALID_URL('Invalid URL', err))
+          }
+
+          return process(url, request._url)
         }
 
         response._body = new ReadableStream(new ResponseStream(res))
