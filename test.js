@@ -159,6 +159,37 @@ test('redirect', async (t) => {
   server.close()
 })
 
+test('redirect, relative location', async (t) => {
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  let redirects = 0
+
+  server.on('request', (req, res) => {
+    if (redirects < 4) {
+      res.writeHead(301, {
+        location: `/${++redirects}`
+      })
+      res.write('redirecting')
+    } else {
+      res.write('redirected')
+    }
+
+    res.end()
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+  const buf = await res.buffer()
+
+  t.is(res.url, `http://localhost:${port}/4`)
+  t.is(res.redirected, true)
+  t.is(buf.toString(), 'redirected')
+
+  server.close()
+})
+
 test('unknown protocol', async (t) => {
   await t.exception(fetch('htp://localhost:0'), /UNKNOWN_PROTOCOL/)
 })
