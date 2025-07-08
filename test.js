@@ -264,6 +264,7 @@ test('construct request from existing request', async (t) => {
 
   const clone = new Request(req)
 
+  t.is(clone.url, 'https://example.com/')
   t.is(clone.method, 'POST')
   t.is(clone.headers.get('content-type'), 'text/plain')
 })
