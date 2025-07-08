@@ -9,8 +9,8 @@
       "default": "./index.js"
     },
     "./global": {
-      "types": "./lib/global.d.ts",
-      "default": "./lib/global.js"
+      "types": "./global.d.ts",
+      "default": "./global.js"
     },
     "./errors": {
       "types": "./lib/errors.d.ts",
