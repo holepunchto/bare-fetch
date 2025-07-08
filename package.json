@@ -67,10 +67,14 @@
     "prettier-config-standard": "^7.0.0"
   },
   "peerDependencies": {
-    "bare-buffer": "*"
+    "bare-buffer": "*",
+    "bare-url": "*"
   },
   "peerDependenciesMeta": {
     "bare-buffer": {
+      "optional": true
+    },
+    "bare-url": {
       "optional": true
     }
   }

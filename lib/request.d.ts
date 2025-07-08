@@ -1,4 +1,5 @@
 import { type HTTPMethod } from 'bare-http1'
+import URL from 'bare-url'
 import Headers from './headers'
 import Body from './body'
 
@@ -15,7 +16,7 @@ interface Request extends Body {
 }
 
 declare class Request {
-  constructor(input: string, init?: RequestInit)
+  constructor(input: string | URL | Request, init?: RequestInit)
 }
 
 declare namespace Request {
