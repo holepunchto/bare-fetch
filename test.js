@@ -4,7 +4,7 @@ const http = require('bare-http1')
 const FormData = require('bare-form-data')
 const fetch = require('.')
 
-const { Response } = fetch
+const { Response, Request } = fetch
 
 test('basic', async (t) => {
   t.plan(8)
@@ -254,4 +254,16 @@ test('response constructor', async (t) => {
 
   t.is(res.status, 123)
   t.is(await res.text(), 'response')
+})
+
+test('construct request from existing request', async (t) => {
+  const req = new Request('https://example.com', {
+    method: 'POST',
+    headers: [['content-type', 'text/plain']]
+  })
+
+  const clone = new Request(req)
+
+  t.is(clone.method, 'POST')
+  t.is(clone.headers.get('content-type'), 'text/plain')
 })

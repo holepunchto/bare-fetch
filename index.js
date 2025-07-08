@@ -26,7 +26,7 @@ module.exports = exports = function fetch(input, init = {}) {
   async function process(input, origin = null) {
     let request
     try {
-      request = input instanceof Request ? input : new Request(input, init)
+      request = new Request(input, init)
     } catch (err) {
       return reject(err)
     }
