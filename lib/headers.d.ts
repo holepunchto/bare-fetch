@@ -7,7 +7,7 @@ interface Headers extends Iterable<[name: string, value: string]> {
 }
 
 declare class Headers {
-  constructor(init: Record<string, string>)
+  constructor(init: Record<string, string> | Iterable<[string, string]>)
 }
 
 export = Headers
