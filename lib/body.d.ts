@@ -1,5 +1,6 @@
 import { ReadableStream } from 'bare-stream/web'
 import Buffer from 'bare-buffer'
+import { FormData, Blob } from 'bare-form-data'
 
 type JSON = string | number | boolean | JSON[] | { [key: string]: JSON }
 
@@ -15,7 +16,16 @@ interface Body {
 }
 
 declare class Body {
-  constructor(body: unknown)
+  constructor(
+    body:
+      | ReadableStream
+      | FormData
+      | Blob
+      | ArrayBufferView
+      | ArrayBuffer
+      | string
+      | null
+  )
 }
 
 export = Body

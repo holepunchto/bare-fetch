@@ -282,10 +282,34 @@ test('strip auth headers from cross-origin redirects', async (t) => {
 })
 
 test('response constructor', async (t) => {
-  const res = new Response('response', { status: 123 })
+  const res = new Response(null, { status: 123 })
 
+  t.is(res.body, null)
   t.is(res.status, 123)
+})
+
+test('response constructor, string body', async (t) => {
+  const res = new Response('response')
+
   t.is(await res.text(), 'response')
+})
+
+test('response constructor, buffer body', async (t) => {
+  const res = new Response(Buffer.from('response'))
+
+  t.is(await res.text(), 'response')
+})
+
+test('response constructor, uint8array body', async (t) => {
+  const res = new Response(Uint8Array.from([1, 2, 3, 4]))
+
+  t.alike(await res.buffer(), Buffer.from([1, 2, 3, 4]))
+})
+
+test('response constructor, arraybuffer body', async (t) => {
+  const res = new Response(Uint8Array.from([1, 2, 3, 4]).buffer)
+
+  t.alike(await res.buffer(), Buffer.from([1, 2, 3, 4]))
 })
 
 test('construct request from existing request', async (t) => {
