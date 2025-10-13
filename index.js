@@ -109,13 +109,7 @@ exports.Headers = Headers
 
 // https://fetch.spec.whatwg.org/#redirect-status
 function isRedirectStatus(status) {
-  return (
-    status === 301 ||
-    status === 302 ||
-    status === 303 ||
-    status === 307 ||
-    status === 308
-  )
+  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308
 }
 
 // https://html.spec.whatwg.org/multipage/browsers.html#same-origin
