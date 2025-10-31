@@ -1,11 +1,9 @@
-declare class FetchError extends Error {
-  constructor(msg: string, code: string, fn?: FetchError, cause?: unknown)
+interface FetchError extends Error {
+  readonly code: string
+}
 
-  static INVALID_URL(msg: string, cause?: unknown): FetchError
-  static NETWORK_ERROR(msg: string, cause?: unknown): FetchError
-  static TOO_MANY_REDIRECTS(msg: string, cause?: unknown): FetchError
-  static UNKNOWN_PROTOCOL(msg: string, cause?: unknown): FetchError
-  static BODY_UNUSABLE(msg: string, cause?: unknown): FetchError
+declare class FetchError extends Error {
+  private constructor()
 }
 
 export = FetchError

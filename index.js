@@ -46,7 +46,7 @@ module.exports = exports = function fetch(input, init = {}) {
     } else if (request._url.protocol === 'https:') {
       protocol = https
     } else {
-      return reject(errors.UNKNOWN_PROTOCOL('Unknown protocol'))
+      return reject(errors.UNKNOWN_PROTOCOL(`Unknown protocol '${request._url.protocol}'`))
     }
 
     response._urls.push(request._url)
