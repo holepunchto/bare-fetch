@@ -3,6 +3,7 @@ const listen = require('listen-async')
 const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
+const { AbortSignal } = require('bare-abort-controller')
 const fetch = require('.')
 
 const { Response, Request, Headers } = fetch
@@ -279,6 +280,22 @@ test('strip auth headers from cross-origin redirects', async (t) => {
 
   serverA.close()
   serverB.close()
+})
+
+test('AbortSignal', async (t) => {
+  t.plan(1)
+
+  const server = http.createServer()
+  t.teardown(() => server.close())
+
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  await t.exception(
+    fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(100) }),
+    /TimeoutError/
+  )
 })
 
 test('response constructor', async (t) => {
