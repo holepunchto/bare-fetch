@@ -69,18 +69,19 @@
     "prettier-config-holepunch": "^2.0.0"
   },
   "peerDependencies": {
+    "bare-abort-controller": "*",
     "bare-buffer": "*",
     "bare-url": "*"
   },
   "peerDependenciesMeta": {
+    "bare-abort-controller": {
+      "optional": true
+    },
     "bare-buffer": {
       "optional": true
     },
     "bare-url": {
       "optional": true
     }
-  },
-  "optionalDependencies": {
-    "bare-abort-controller": "^1.0.1"
   }
 }
