@@ -33,7 +33,8 @@ module.exports = exports = function fetch(input, init = {}) {
 
     if (request.signal) {
       if (request.signal.aborted) return abort(reject, request, response)
-      else request.signal.addEventListener('abort', (event) => abort(reject, request, response))
+
+      request.signal.addEventListener('abort', (event) => abort(reject, request, response))
     }
 
     if (response._urls.length > 20) {
