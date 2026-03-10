@@ -292,8 +292,10 @@ test('destroy unconsumed body', async (t) => {
     res.end(Buffer.alloc(65536, 'data'))
   })
 
-  const res = await fetch(`http://localhost:${port}`)
-  await res.body.cancel()
+  for (let i = 0; i < 65536; i++) {
+    const res = await fetch(`http://localhost:${port}`)
+    await res.body.cancel()
+  }
 
   server.close()
 })
@@ -317,8 +319,10 @@ test('free connection after redirect', async (t) => {
     }
   })
 
-  const res = await fetch(`http://localhost:${port}`)
-  await res.buffer()
+  for (let i = 0; i < 65536; i++) {
+    const res = await fetch(`http://localhost:${port}`)
+    await res.buffer()
+  }
 
   server.close()
 })
