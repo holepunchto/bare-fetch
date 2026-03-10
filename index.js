@@ -67,6 +67,8 @@ module.exports = exports = function fetch(input, init = {}) {
       },
       (res) => {
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
+          res.resume()
+
           let url
           try {
             url = new URL(res.headers.location, request._url)

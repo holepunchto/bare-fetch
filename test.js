@@ -281,6 +281,48 @@ test('strip auth headers from cross-origin redirects', async (t) => {
   serverB.close()
 })
 
+test('destroy unconsumed body', async (t) => {
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.end(Buffer.alloc(65536, 'data'))
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+  await res.body.cancel()
+
+  server.close()
+})
+
+test('free connection after redirect', async (t) => {
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  let redirected = false
+
+  server.on('request', (req, res) => {
+    if (!redirected) {
+      redirected = true
+
+      res.writeHead(301, { location: `http://localhost:${port}/dest` })
+      res.end('redirecting')
+    } else {
+      res.end('ok')
+    }
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+  await res.buffer()
+
+  server.close()
+})
+
 test('response constructor', async (t) => {
   const res = new Response(null, { status: 123 })
 
