@@ -283,7 +283,7 @@ test('strip auth headers from cross-origin redirects', async (t) => {
 })
 
 test('AbortSignal', async (t) => {
-  t.plan(1)
+  t.plan(2)
 
   const server = http.createServer()
   t.teardown(() => server.close())
@@ -291,6 +291,11 @@ test('AbortSignal', async (t) => {
   await listen(server, 0)
 
   const { port } = server.address()
+
+  await t.exception(
+    fetch(`http://localhost:${port}`, { signal: AbortSignal.abort(new Error('boom!')) }),
+    /boom!/
+  )
 
   await t.exception(
     fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(100) }),
