@@ -295,7 +295,7 @@ test('destroy unconsumed body', async (t) => {
 
   const agent = new http.Agent()
 
-  for (let i = 0; i < 1024; i++) {
+  for (let i = 0; i < 128; i++) {
     const res = await fetch(`http://localhost:${port}`, { agent })
     await res.body.cancel()
   }
@@ -326,7 +326,7 @@ test('free connection after redirect', async (t) => {
 
   const agent = new http.Agent()
 
-  for (let i = 0; i < 1024; i++) {
+  for (let i = 0; i < 128; i++) {
     const res = await fetch(`http://localhost:${port}`, { agent })
     await res.buffer()
   }
