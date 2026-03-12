@@ -282,12 +282,64 @@ test('strip auth headers from cross-origin redirects', async (t) => {
   serverB.close()
 })
 
+test('destroy unconsumed body', async (t) => {
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' })
+    res.end('data')
+  })
+
+  const agent = new http.Agent()
+
+  for (let i = 0; i < 128; i++) {
+    const res = await fetch(`http://localhost:${port}`, { agent })
+    await res.body.cancel()
+  }
+
+  t.ok([...agent.sockets].length <= 1)
+
+  server.close()
+})
+
+test('free connection after redirect', async (t) => {
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  let redirected = false
+
+  server.on('request', (req, res) => {
+    if (!redirected) {
+      redirected = true
+
+      res.writeHead(301, { location: `http://localhost:${port}/dest` })
+      res.end('redirecting')
+    } else {
+      res.end('ok')
+    }
+  })
+
+  const agent = new http.Agent()
+
+  for (let i = 0; i < 128; i++) {
+    const res = await fetch(`http://localhost:${port}`, { agent })
+    await res.buffer()
+  }
+
+  t.ok([...agent.sockets].length <= 1)
+
+  server.close()
+})
+
 test('AbortSignal', async (t) => {
   t.plan(2)
 
   const server = http.createServer()
-  t.teardown(() => server.close())
-
   await listen(server, 0)
 
   const { port } = server.address()
@@ -301,6 +353,8 @@ test('AbortSignal', async (t) => {
     fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(100) }),
     /TimeoutError/
   )
+
+  server.close()
 })
 
 test('response constructor', async (t) => {

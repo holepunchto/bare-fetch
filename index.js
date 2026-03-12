@@ -69,12 +69,15 @@ module.exports = exports = function fetch(input, init = {}) {
       request._url,
       {
         method: request._method,
-        headers: Object.fromEntries(request._headers)
+        headers: Object.fromEntries(request._headers),
+        agent: request._agent
       },
       (res) => {
         if (request.signal && request.signal.aborted) return
 
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
+          res.resume()
+
           let url
           try {
             url = new URL(res.headers.location, request._url)
@@ -106,7 +109,7 @@ module.exports = exports = function fetch(input, init = {}) {
 
       req.end()
     } catch (err) {
-      return reject(errors.NETWORK_ERROR('Network error', err))
+      req.destroy(err)
     }
   }
 }
