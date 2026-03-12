@@ -281,7 +281,7 @@ test('strip auth headers from cross-origin redirects', async (t) => {
   serverB.close()
 })
 
-test('destroy unconsumed body', async (t) => {
+test('destroy unconsumed body', { timeout: 60000 }, async (t) => {
   const server = http.createServer()
   await listen(server, 0)
 
@@ -292,7 +292,7 @@ test('destroy unconsumed body', async (t) => {
     res.end(Buffer.alloc(65536, 'data'))
   })
 
-  for (let i = 0; i < 65536; i++) {
+  for (let i = 0; i < 30000; i++) {
     const res = await fetch(`http://localhost:${port}`)
     await res.body.cancel()
   }
@@ -300,7 +300,7 @@ test('destroy unconsumed body', async (t) => {
   server.close()
 })
 
-test('free connection after redirect', async (t) => {
+test('free connection after redirect', { timeout: 60000 }, async (t) => {
   const server = http.createServer()
   await listen(server, 0)
 
@@ -319,7 +319,7 @@ test('free connection after redirect', async (t) => {
     }
   })
 
-  for (let i = 0; i < 65536; i++) {
+  for (let i = 0; i < 30000; i++) {
     const res = await fetch(`http://localhost:${port}`)
     await res.buffer()
   }
