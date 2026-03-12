@@ -1,6 +1,6 @@
 {
   "name": "bare-fetch",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "WHATWG Fetch implementation for Bare",
   "exports": {
     "./package": "./package.json",
@@ -61,6 +61,7 @@
     "bare-zlib": "^1.3.0"
   },
   "devDependencies": {
+    "bare-abort-controller": "^1.0.1",
     "bare-buffer": "^3.0.2",
     "brittle": "^3.3.0",
     "listen-async": "^1.0.0",
@@ -68,10 +69,14 @@
     "prettier-config-holepunch": "^2.0.0"
   },
   "peerDependencies": {
+    "bare-abort-controller": "*",
     "bare-buffer": "*",
     "bare-url": "*"
   },
   "peerDependenciesMeta": {
+    "bare-abort-controller": {
+      "optional": true
+    },
     "bare-buffer": {
       "optional": true
     },

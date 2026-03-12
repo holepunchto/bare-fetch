@@ -3,9 +3,10 @@ const listen = require('listen-async')
 const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
+const { AbortSignal } = require('bare-abort-controller')
 const fetch = require('.')
 
-const { Response, Request } = fetch
+const { Response, Request, Headers } = fetch
 
 test('basic', async (t) => {
   t.plan(8)
@@ -327,6 +328,23 @@ test('free connection after redirect', { timeout: 60000 }, async (t) => {
   server.close()
 })
 
+test('AbortSignal', async (t) => {
+  t.plan(2)
+
+  const server = http.createServer()
+  t.teardown(() => server.close())
+
+  await t.exception(
+    fetch(`http://localhost:${port}`, { signal: AbortSignal.abort(new Error('boom!')) }),
+    /boom!/
+  )
+
+  await t.exception(
+    fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(100) }),
+    /TimeoutError/
+  )
+})
+
 test('response constructor', async (t) => {
   const res = new Response(null, { status: 123 })
 
@@ -369,4 +387,28 @@ test('construct request from existing request', async (t) => {
   t.is(clone.url, 'https://example.com/')
   t.is(clone.method, 'POST')
   t.is(clone.headers.get('content-type'), 'text/plain')
+})
+
+test('headers iterator methods', async (t) => {
+  const headers = new Headers({
+    'Content-Type': 'text/plain',
+    Accept: 'application/json'
+  })
+
+  t.alike(
+    [...headers.entries()],
+    [
+      ['accept', 'application/json'],
+      ['content-type', 'text/plain']
+    ]
+  )
+  t.alike([...headers.keys()], ['accept', 'content-type'])
+  t.alike([...headers.values()], ['application/json', 'text/plain'])
+
+  const result = []
+  headers.forEach((value, name) => result.push([name, value]))
+  t.alike(result, [
+    ['accept', 'application/json'],
+    ['content-type', 'text/plain']
+  ])
 })

@@ -1,6 +1,6 @@
 const http = require('bare-http1')
 const https = require('bare-https')
-const { ReadableStream } = require('bare-stream/web')
+const { ReadableStream, isReadableStream } = require('bare-stream/web')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
 const ResponseStream = require('./lib/response-stream')
@@ -29,6 +29,12 @@ module.exports = exports = function fetch(input, init = {}) {
       request = new Request(input, init)
     } catch (err) {
       return reject(err)
+    }
+
+    if (request.signal) {
+      if (request.signal.aborted) return abort(reject, request, response)
+
+      request.signal.addEventListener('abort', (event) => abort(reject, request, response))
     }
 
     if (response._urls.length > 20) {
@@ -66,6 +72,8 @@ module.exports = exports = function fetch(input, init = {}) {
         headers: Object.fromEntries(request._headers)
       },
       (res) => {
+        if (request.signal && request.signal.aborted) return
+
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
           res.resume()
 
@@ -117,4 +125,14 @@ function isRedirectStatus(status) {
 // https://html.spec.whatwg.org/multipage/browsers.html#same-origin
 function isSameOrigin(a, b) {
   return a.protocol === b.protocol && a.host === b.host
+}
+
+// https://fetch.spec.whatwg.org/#abort-fetch
+function abort(rej, req, res) {
+  const { reason } = req.signal
+
+  if (isReadableStream(req.body)) req.body.cancel(reason)
+  if (isReadableStream(res.body)) res.body.cancel(reason)
+
+  rej(reason)
 }
