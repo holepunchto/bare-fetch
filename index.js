@@ -129,11 +129,11 @@ function isSameOrigin(a, b) {
 }
 
 // https://fetch.spec.whatwg.org/#abort-fetch
-function abort(rej, req, res) {
+function abort(reject, req, res) {
   const { reason } = req.signal
 
   if (isReadableStream(req.body)) req.body.cancel(reason)
   if (isReadableStream(res.body)) res.body.cancel(reason)
 
-  rej(reason)
+  reject(reason)
 }
