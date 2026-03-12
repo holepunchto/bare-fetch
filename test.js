@@ -293,10 +293,14 @@ test('destroy unconsumed body', async (t) => {
     res.end('data')
   })
 
-  for (let i = 0; i < 65536; i++) {
-    const res = await fetch(`http://localhost:${port}`)
+  const agent = new http.Agent()
+
+  for (let i = 0; i < 1024; i++) {
+    const res = await fetch(`http://localhost:${port}`, { agent })
     await res.body.cancel()
   }
+
+  t.ok([...agent.sockets].length <= 1)
 
   server.close()
 })
@@ -320,10 +324,14 @@ test('free connection after redirect', async (t) => {
     }
   })
 
-  for (let i = 0; i < 65536; i++) {
-    const res = await fetch(`http://localhost:${port}`)
+  const agent = new http.Agent()
+
+  for (let i = 0; i < 1024; i++) {
+    const res = await fetch(`http://localhost:${port}`, { agent })
     await res.buffer()
   }
+
+  t.ok([...agent.sockets].length <= 1)
 
   server.close()
 })

@@ -1,4 +1,4 @@
-import { type HTTPMethod } from 'bare-http1'
+import { type HTTPMethod, HTTPAgent } from 'bare-http1'
 import URL from 'bare-url'
 import { AbortSignal } from 'bare-abort-controller'
 import Headers from './headers'
@@ -9,6 +9,7 @@ interface RequestInit {
   method?: HTTPMethod
   headers?: Headers
   signal?: AbortSignal
+  agent?: HTTPAgent
 }
 
 interface Request extends Body {
