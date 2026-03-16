@@ -401,6 +401,20 @@ test('construct request from existing request', async (t) => {
   t.is(clone.headers.get('content-type'), 'text/plain')
 })
 
+test('normalize method to uppercase', async (t) => {
+  const req = new Request('https://example.com', { method: 'post' })
+  t.is(req.method, 'POST')
+
+  const req2 = new Request('https://example.com', { method: 'get' })
+  t.is(req2.method, 'GET')
+
+  const req3 = new Request('https://example.com', { method: 'delete' })
+  t.is(req3.method, 'DELETE')
+
+  const req4 = new Request('https://example.com', { method: 'PATCH' })
+  t.is(req4.method, 'PATCH')
+})
+
 test('headers iterator methods', async (t) => {
   const headers = new Headers({
     'Content-Type': 'text/plain',
