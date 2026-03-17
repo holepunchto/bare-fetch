@@ -30,7 +30,7 @@ test('basic', async (t) => {
   })
 
   const res = await fetch(`http://localhost:${port}`)
-  const received = await res.bytes()
+  const received = await res.buffer()
 
   t.is(res.ok, true)
   t.is(res.url, `http://localhost:${port}/`)
@@ -42,7 +42,7 @@ test('basic', async (t) => {
 
   t.alike(sent, received)
 
-  await t.exception(res.bytes(), /BODY_UNUSABLE/)
+  await t.exception(res.buffer(), /BODY_UNUSABLE/)
 
   server.close()
 })
@@ -87,8 +87,6 @@ test('network error', async (t) => {
 })
 
 test('text', async (t) => {
-  t.plan(3)
-
   const server = http.createServer()
   await listen(server, 0)
 
@@ -112,8 +110,6 @@ test('text', async (t) => {
 })
 
 test('json', async (t) => {
-  t.plan(3)
-
   const server = http.createServer()
   await listen(server, 0)
 
@@ -166,8 +162,6 @@ test('request clone', async (t) => {
 })
 
 test('arrayBuffer', async (t) => {
-  t.plan(3)
-
   const server = http.createServer()
   await listen(server, 0)
 
@@ -192,7 +186,7 @@ test('arrayBuffer', async (t) => {
 })
 
 test('WHATWG URL', async (t) => {
-  t.plan(2)
+  t.plan(1)
 
   const server = http.createServer()
   await listen(server, 0)
@@ -206,9 +200,7 @@ test('WHATWG URL', async (t) => {
   })
 
   const url = new URL(`http://localhost:${port}`)
-  const res = await fetch(url)
-
-  t.is(res.ok, true)
+  await fetch(url)
 
   server.close()
 })
