@@ -9,7 +9,7 @@ const fetch = require('.')
 const { Response, Request, Headers } = fetch
 
 test('basic', async (t) => {
-  t.plan(8)
+  t.plan(10)
 
   const server = http.createServer()
   await listen(server, 0)
@@ -29,17 +29,19 @@ test('basic', async (t) => {
   })
 
   const res = await fetch(`http://localhost:${port}`)
-  const received = await res.buffer()
+  const received = await res.bytes()
 
+  t.is(res.ok, true)
   t.is(res.url, `http://localhost:${port}/`)
   t.is(res.status, 200)
+  t.is(res.statusText, 'OK')
   t.is(res.headers.get('content-type'), 'text/plain')
   t.is(res.redirected, false)
   t.is(res.bodyUsed, true)
 
   t.alike(sent, received)
 
-  await t.exception(res.buffer(), /BODY_UNUSABLE/)
+  await t.exception(res.bytes(), /BODY_UNUSABLE/)
 
   server.close()
 })
