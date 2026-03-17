@@ -90,6 +90,27 @@ test('json', async (t) => {
   server.close()
 })
 
+test.solo('response clone', async (t) => {
+  t.plan(2)
+
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  const sent = 'This is the correct message.'
+
+  server.on('request', (req, res) => res.end(sent))
+
+  const res = await fetch(`http://localhost:${port}`)
+  const clone = res.clone()
+
+  t.is(sent, await res.text())
+  t.is(sent, await clone.text())
+
+  server.close()
+})
+
 test('post form data', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
