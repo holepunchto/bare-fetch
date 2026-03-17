@@ -46,6 +46,30 @@ test('basic', async (t) => {
   server.close()
 })
 
+test('server error', async (t) => {
+  t.plan(5)
+
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', (req, res) => {
+    res.writeHead(500)
+    res.end()
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  t.is(res.ok, false)
+  t.is(res.url, `http://localhost:${port}/`)
+  t.is(res.status, 500)
+  t.is(res.statusText, 'Internal Server Error')
+  t.is(res.redirected, false)
+
+  server.close()
+})
+
 test('text', async (t) => {
   t.plan(3)
 
@@ -278,6 +302,22 @@ test('redirect, relative location', async (t) => {
   server.close()
 })
 
+test('redirect to invalid url', async (t) => {
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', (req, res) => {
+    res.writeHead(301, { location: 'htp://localhost:10000000000' })
+    res.end()
+  })
+
+  await t.exception(fetch(`http://localhost:${port}`), /INVALID_URL/)
+
+  server.close()
+})
+
 test('compression', async (t) => {
   t.plan(4)
 
@@ -318,6 +358,10 @@ test('unknown protocol', async (t) => {
 
 test('invalid url', async (t) => {
   await t.exception(fetch('http://localhost:10000000000'), /INVALID_URL/)
+})
+
+test('relative url', async (t) => {
+  await t.exception(fetch('/some/path'), /INVALID_URL/)
 })
 
 test('too many redirects', async (t) => {
