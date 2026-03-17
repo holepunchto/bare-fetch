@@ -4,6 +4,7 @@ const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
 const { AbortSignal } = require('bare-abort-controller')
+const { URL } = require('bare-url')
 const fetch = require('.')
 
 const { Response, Request, Headers } = fetch
@@ -186,6 +187,28 @@ test('arrayBuffer', async (t) => {
   t.is(res.bodyUsed, true)
 
   await t.exception(res.arrayBuffer(), /BODY_UNUSABLE/)
+
+  server.close()
+})
+
+test('WHATWG URL', async (t) => {
+  t.plan(2)
+
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', (req, res) => {
+    t.pass()
+
+    res.end()
+  })
+
+  const url = new URL(`http://localhost:${port}`)
+  const res = await fetch(url)
+
+  t.is(res.ok, true)
 
   server.close()
 })
