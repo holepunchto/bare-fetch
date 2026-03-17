@@ -47,6 +47,8 @@ test('basic', async (t) => {
 })
 
 test('text', async (t) => {
+  t.plan(3)
+
   const server = http.createServer()
   await listen(server, 0)
 
@@ -70,6 +72,8 @@ test('text', async (t) => {
 })
 
 test('json', async (t) => {
+  t.plan(3)
+
   const server = http.createServer()
   await listen(server, 0)
 
@@ -119,6 +123,32 @@ test('request clone', async (t) => {
 
   t.is(await req.text(), 'Hello world')
   t.is(await clone.text(), 'Hello world')
+})
+
+test('arrayBuffer', async (t) => {
+  t.plan(3)
+
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  const sent = Buffer.from('This is the correct message.')
+
+  server.on('request', (req, res) => res.end(sent))
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  const received = await res.arrayBuffer()
+
+  const expected = sent.buffer.slice(sent.byteOffset, sent.byteOffset + sent.byteLength)
+
+  t.alike(received, expected)
+  t.is(res.bodyUsed, true)
+
+  await t.exception(res.arrayBuffer(), /BODY_UNUSABLE/)
+
+  server.close()
 })
 
 test('post form data', async (t) => {
