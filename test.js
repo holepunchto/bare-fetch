@@ -70,6 +70,21 @@ test('server error', async (t) => {
   server.close()
 })
 
+test('network error', async (t) => {
+  t.plan(1)
+
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', (req, res) => res.destroy())
+
+  await t.exception(fetch(`http://localhost:${port}`), /NETWORK_ERROR/)
+
+  server.close()
+})
+
 test('text', async (t) => {
   t.plan(3)
 
