@@ -151,6 +151,34 @@ test('arrayBuffer', async (t) => {
   server.close()
 })
 
+test('request argument', async (t) => {
+  t.plan(2)
+
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  const sent = 'This is the correct message.'
+
+  server.on('request', (req, res) => {
+    t.is(req.headers['cache-control'], 'max-age=604800')
+
+    res.end(sent)
+  })
+
+  const headers = new Headers([['Cache-Control', 'max-age=604800']])
+  const opts = { headers }
+  const req = new Request(`http://localhost:${port}`, opts)
+
+  const res = await fetch(req)
+  const received = await res.text()
+
+  t.is(sent, received)
+
+  server.close()
+})
+
 test('post form data', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
