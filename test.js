@@ -218,6 +218,24 @@ test('request argument', async (t) => {
   server.close()
 })
 
+test('post string', async (t) => {
+  t.plan(1)
+
+  const server = http.createServer()
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  server.on('request', async (req, res) => {
+    req.on('data', (data) => t.alike(data, Buffer.from('message')))
+    res.end()
+  })
+
+  await fetch(`http://localhost:${port}`, { method: 'POST', body: 'message' })
+
+  server.close()
+})
+
 test('post form data', async (t) => {
   const server = http.createServer()
   await listen(server, 0)
