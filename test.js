@@ -382,7 +382,7 @@ test('too many redirects', async (t) => {
 
 test('strip auth headers from cross-origin redirects', async (t) => {
   const sub = t.test()
-  sub.plan(2)
+  sub.plan(3)
 
   const serverA = http.createServer()
   await listen(serverA)
@@ -393,14 +393,21 @@ test('strip auth headers from cross-origin redirects', async (t) => {
   const { port: portB } = serverB.address()
 
   serverA.on('request', (req, res) => {
-    sub.ok('authorization' in req.headers)
+    if (req.url === '/redirect') {
+      sub.ok('authorization' in req.headers, 'same-origin')
 
-    res.writeHead(301, { location: `http://localhost:${portB}` })
-    res.end()
+      res.writeHead(301, { location: `http://localhost:${portB}` })
+      res.end()
+    } else {
+      sub.ok('authorization' in req.headers, 'from client')
+
+      res.writeHead(301, { location: `http://localhost:${portA}/redirect` })
+      res.end()
+    }
   })
 
   serverB.on('request', (req, res) => {
-    sub.absent('authorization' in req.headers)
+    sub.absent('authorization' in req.headers, 'cross-origin')
 
     res.end()
   })
