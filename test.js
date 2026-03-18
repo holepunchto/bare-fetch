@@ -4,7 +4,7 @@ const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
 const { AbortSignal } = require('bare-abort-controller')
-const { URL } = require('bare-url')
+
 const fetch = require('.')
 
 const { Response, Request, Headers } = fetch
