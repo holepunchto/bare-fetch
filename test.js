@@ -550,10 +550,8 @@ test('headers iterator methods', async (t) => {
   ])
 })
 
-function noop() {}
-
-async function createServer(reqHandler = noop) {
-  const server = http.createServer().on('request', reqHandler)
+async function createServer(handler) {
+  const server = http.createServer(handler)
 
   await listen(server, 0)
 
