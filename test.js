@@ -422,10 +422,9 @@ test('signal', async (t) => {
 })
 
 test('suspend agent', async (t) => {
-  const server = http.createServer((req, res) => res.end())
-  await listen(server, 0)
+  t.plan(1)
 
-  const { port } = server.address()
+  const port = await createServer(t, (req, res) => res.end())
 
   const agent = new http.Agent()
   agent.suspend()
@@ -434,8 +433,6 @@ test('suspend agent', async (t) => {
 
   agent.resume()
   await t.execution(res)
-
-  server.close()
 })
 
 test('response constructor', async (t) => {
