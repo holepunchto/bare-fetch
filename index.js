@@ -65,12 +65,16 @@ module.exports = exports = function fetch(input, init = {}) {
       request._headers.set('content-type', request._type)
     }
 
+    const agent = request._agent || protocol.globalAgent
+
+    while (agent.suspended) await agent.resumed
+
     const req = protocol.request(
       request._url,
       {
+        agent,
         method: request._method,
-        headers: Object.fromEntries(request._headers),
-        agent: request._agent
+        headers: Object.fromEntries(request._headers)
       },
       (res) => {
         if (request.signal && request.signal.aborted) return

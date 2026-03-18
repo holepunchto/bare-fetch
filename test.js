@@ -336,7 +336,7 @@ test('free connection after redirect', async (t) => {
   server.close()
 })
 
-test('AbortSignal', async (t) => {
+test('signal', async (t) => {
   t.plan(2)
 
   const server = http.createServer()
@@ -353,6 +353,23 @@ test('AbortSignal', async (t) => {
     fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(100) }),
     /TimeoutError/
   )
+
+  server.close()
+})
+
+test('suspend agent', async (t) => {
+  const server = http.createServer((req, res) => res.end())
+  await listen(server, 0)
+
+  const { port } = server.address()
+
+  const agent = new http.Agent()
+  agent.suspend()
+
+  const res = fetch(`http://localhost:${port}`, { agent })
+
+  agent.resume()
+  await t.execution(res)
 
   server.close()
 })
