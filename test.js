@@ -97,35 +97,6 @@ test('json', async (t) => {
   await t.exception(res.json(), /BODY_UNUSABLE/)
 })
 
-test('response clone', async (t) => {
-  t.plan(2)
-
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
-
-  const sent = 'This is the correct message.'
-
-  server.on('request', (req, res) => res.end(sent))
-
-  const res = await fetch(`http://localhost:${port}`)
-  const clone = res.clone()
-
-  t.is(await res.text(), sent)
-  t.is(await clone.text(), sent)
-
-  server.close()
-})
-
-test('request clone', async (t) => {
-  const req = new Request('http://localhost', { body: 'Hello world' })
-  const clone = req.clone()
-
-  t.is(await req.text(), 'Hello world')
-  t.is(await clone.text(), 'Hello world')
-})
-
 test('arrayBuffer', async (t) => {
   t.plan(3)
 
@@ -276,6 +247,28 @@ test('redirect to invalid url', async (t) => {
   })
 
   await t.exception(fetch(`http://localhost:${port}`), /INVALID_URL/)
+})
+
+test('response clone', async (t) => {
+  t.plan(2)
+
+  const sent = 'This is the correct message.'
+
+  const port = await createServer(t, (req, res) => res.end(sent))
+
+  const res = await fetch(`http://localhost:${port}`)
+  const clone = res.clone()
+
+  t.is(await res.text(), sent)
+  t.is(await clone.text(), sent)
+})
+
+test('request clone', async (t) => {
+  const req = new Request('http://localhost', { body: 'Hello world' })
+  const clone = req.clone()
+
+  t.is(await req.text(), 'Hello world')
+  t.is(await clone.text(), 'Hello world')
 })
 
 test('compression', async (t) => {
