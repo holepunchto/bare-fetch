@@ -4,21 +4,17 @@ const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
 const { AbortSignal } = require('bare-abort-controller')
+
 const fetch = require('.')
 
 const { Response, Request, Headers } = fetch
 
 test('basic', async (t) => {
-  t.plan(8)
-
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
+  t.plan(10)
 
   const sent = Buffer.from('This is the correct message.')
 
-  server.on('request', (req, res) => {
+  const port = await createServer(t, (req, res) => {
     const ua = req.headers['user-agent']
 
     t.comment(ua)
@@ -31,8 +27,10 @@ test('basic', async (t) => {
   const res = await fetch(`http://localhost:${port}`)
   const received = await res.buffer()
 
+  t.is(res.ok, true)
   t.is(res.url, `http://localhost:${port}/`)
   t.is(res.status, 200)
+  t.is(res.statusText, 'OK')
   t.is(res.headers.get('content-type'), 'text/plain')
   t.is(res.redirected, false)
   t.is(res.bodyUsed, true)
@@ -40,21 +38,39 @@ test('basic', async (t) => {
   t.alike(sent, received)
 
   await t.exception(res.buffer(), /BODY_UNUSABLE/)
+})
 
-  server.close()
+test('server error', async (t) => {
+  t.plan(5)
+
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(500)
+    res.end()
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  t.is(res.ok, false)
+  t.is(res.url, `http://localhost:${port}/`)
+  t.is(res.status, 500)
+  t.is(res.statusText, 'Internal Server Error')
+  t.is(res.redirected, false)
+})
+
+test('network error', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => res.destroy())
+
+  await t.exception(fetch(`http://localhost:${port}`), /NETWORK_ERROR/)
 })
 
 test('text', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
+  t.plan(3)
 
   const sent = 'This is the correct message.'
 
-  server.on('request', (req, res) => {
-    res.end(sent)
-  })
+  const port = await createServer(t, (req, res) => res.end(sent))
 
   const res = await fetch(`http://localhost:${port}`)
   const received = await res.text()
@@ -63,21 +79,14 @@ test('text', async (t) => {
   t.is(res.bodyUsed, true)
 
   await t.exception(res.text(), /BODY_UNUSABLE/)
-
-  server.close()
 })
 
 test('json', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
+  t.plan(3)
 
   const sent = { a: 1, b: 2, c: 3 }
 
-  server.on('request', (req, res) => {
-    res.end(JSON.stringify(sent))
-  })
+  const port = await createServer(t, (req, res) => res.end(JSON.stringify(sent)))
 
   const res = await fetch(`http://localhost:${port}`)
   const received = await res.json()
@@ -86,46 +95,73 @@ test('json', async (t) => {
   t.is(res.bodyUsed, true)
 
   await t.exception(res.json(), /BODY_UNUSABLE/)
-
-  server.close()
 })
 
-test('response clone', async (t) => {
+test('arrayBuffer', async (t) => {
+  t.plan(3)
+
+  const sent = Buffer.from('This is the correct message.')
+
+  const port = await createServer(t, (req, res) => res.end(sent))
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  const received = await res.arrayBuffer()
+
+  t.alike(received, sent.buffer)
+  t.is(res.bodyUsed, true)
+
+  await t.exception(res.arrayBuffer(), /BODY_UNUSABLE/)
+})
+
+test('WHATWG URL', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => {
+    res.end()
+
+    t.pass()
+  })
+
+  const url = new URL(`http://localhost:${port}`)
+  await fetch(url)
+})
+
+test('request argument', async (t) => {
   t.plan(2)
-
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
 
   const sent = 'This is the correct message.'
 
-  server.on('request', (req, res) => res.end(sent))
+  const port = await createServer(t, (req, res) => {
+    t.is(req.headers['cache-control'], 'max-age=604800')
 
-  const res = await fetch(`http://localhost:${port}`)
-  const clone = res.clone()
+    res.end(sent)
+  })
 
-  t.is(await res.text(), sent)
-  t.is(await clone.text(), sent)
+  const headers = new Headers([['Cache-Control', 'max-age=604800']])
+  const req = new Request(`http://localhost:${port}`, { headers })
 
-  server.close()
+  const res = await fetch(req)
+  const received = await res.text()
+
+  t.is(sent, received)
 })
 
-test('request clone', async (t) => {
-  const req = new Request('http://localhost', { body: 'Hello world' })
-  const clone = req.clone()
+test('post string', async (t) => {
+  t.plan(1)
 
-  t.is(await req.text(), 'Hello world')
-  t.is(await clone.text(), 'Hello world')
+  const port = await createServer(t, async (req, res) => {
+    req.on('data', (data) => t.alike(data, Buffer.from('message')))
+    res.end()
+  })
+
+  await fetch(`http://localhost:${port}`, { method: 'POST', body: 'message' })
 })
 
 test('post form data', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
+  t.plan(2)
 
-  const { port } = server.address()
-
-  server.on('request', async (req, res) => {
+  const port = await createServer(t, async (req, res) => {
     const type = req.headers['content-type']
 
     t.ok(type.startsWith('multipart/form-data'))
@@ -152,23 +188,16 @@ test('post form data', async (t) => {
   body.append('text', 'Hello world')
 
   await fetch(`http://localhost:${port}`, { method: 'POST', body })
-
-  server.close()
 })
 
 test('redirect', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
+  t.plan(3)
 
   let redirects = 0
 
-  server.on('request', (req, res) => {
+  const port = await createServer(t, (req, res) => {
     if (redirects < 4) {
-      res.writeHead(301, {
-        location: `http://localhost:${port}/${++redirects}`
-      })
+      res.writeHead(301, { location: `http://localhost:${port}/${++redirects}` })
       res.write('redirecting')
     } else {
       res.write('redirected')
@@ -183,23 +212,16 @@ test('redirect', async (t) => {
   t.is(res.url, `http://localhost:${port}/4`)
   t.is(res.redirected, true)
   t.is(buf.toString(), 'redirected')
-
-  server.close()
 })
 
 test('redirect, relative location', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
+  t.plan(3)
 
   let redirects = 0
 
-  server.on('request', (req, res) => {
+  const port = await createServer(t, (req, res) => {
     if (redirects < 4) {
-      res.writeHead(301, {
-        location: `/${++redirects}`
-      })
+      res.writeHead(301, { location: `/${++redirects}` })
       res.write('redirecting')
     } else {
       res.write('redirected')
@@ -214,21 +236,47 @@ test('redirect, relative location', async (t) => {
   t.is(res.url, `http://localhost:${port}/4`)
   t.is(res.redirected, true)
   t.is(buf.toString(), 'redirected')
+})
 
-  server.close()
+test('redirect to invalid url', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(301, { location: 'htp://localhost:10000000000' })
+    res.end()
+  })
+
+  await t.exception(fetch(`http://localhost:${port}`), /INVALID_URL/)
+})
+
+test('response clone', async (t) => {
+  t.plan(2)
+
+  const sent = 'This is the correct message.'
+
+  const port = await createServer(t, (req, res) => res.end(sent))
+
+  const res = await fetch(`http://localhost:${port}`)
+  const clone = res.clone()
+
+  t.is(await res.text(), sent)
+  t.is(await clone.text(), sent)
+})
+
+test('request clone', async (t) => {
+  const req = new Request('http://localhost', { body: 'Hello world' })
+  const clone = req.clone()
+
+  t.is(await req.text(), 'Hello world')
+  t.is(await clone.text(), 'Hello world')
 })
 
 test('compression', async (t) => {
   t.plan(4)
 
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
-
   const sent = Buffer.from('This is the correct message.')
 
-  server.on('request', (req, res) => {
+  const port = await createServer(t, (req, res) => {
     res.writeHead(200, {
       'Content-Type': 'text/plain',
       'Content-Encoding': 'gzip'
@@ -248,8 +296,6 @@ test('compression', async (t) => {
   t.is(res.bodyUsed, true)
 
   t.alike(sent, received)
-
-  server.close()
 })
 
 test('unknown protocol', async (t) => {
@@ -260,25 +306,24 @@ test('invalid url', async (t) => {
   await t.exception(fetch('http://localhost:10000000000'), /INVALID_URL/)
 })
 
+test('relative url', async (t) => {
+  await t.exception(fetch('/some/path'), /INVALID_URL/)
+})
+
 test('too many redirects', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
+  t.plan(1)
 
-  const { port } = server.address()
-
-  server.on('request', (req, res) => {
+  const port = await createServer(t, (req, res) => {
     res.writeHead(301, { location: `http://localhost:${port}` })
     res.end()
   })
 
   await t.exception(fetch(`http://localhost:${port}`), /TOO_MANY_REDIRECTS/)
-
-  server.close()
 })
 
 test('strip auth headers from cross-origin redirects', async (t) => {
   const sub = t.test()
-  sub.plan(2)
+  sub.plan(3)
 
   const serverA = http.createServer()
   await listen(serverA)
@@ -289,21 +334,26 @@ test('strip auth headers from cross-origin redirects', async (t) => {
   const { port: portB } = serverB.address()
 
   serverA.on('request', (req, res) => {
-    sub.ok('authorization' in req.headers)
+    if (req.url === '/redirect') {
+      sub.ok('authorization' in req.headers, 'same-origin')
 
-    res.writeHead(301, { location: `http://localhost:${portB}` })
-    res.end()
+      res.writeHead(301, { location: `http://localhost:${portB}` })
+      res.end()
+    } else {
+      sub.ok('authorization' in req.headers, 'from client')
+
+      res.writeHead(301, { location: `http://localhost:${portA}/redirect` })
+      res.end()
+    }
   })
 
   serverB.on('request', (req, res) => {
-    sub.absent('authorization' in req.headers)
+    sub.absent('authorization' in req.headers, 'cross-origin')
 
     res.end()
   })
 
-  await fetch(`http://localhost:${portA}`, {
-    headers: { Authorization: 'Bearer Bare' }
-  })
+  await fetch(`http://localhost:${portA}`, { headers: { Authorization: 'Bearer Bare' } })
 
   await sub
 
@@ -312,12 +362,9 @@ test('strip auth headers from cross-origin redirects', async (t) => {
 })
 
 test('destroy unconsumed body', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
+  t.plan(1)
 
-  const { port } = server.address()
-
-  server.on('request', (req, res) => {
+  const port = await createServer(t, (req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' })
     res.end('data')
   })
@@ -330,19 +377,14 @@ test('destroy unconsumed body', async (t) => {
   }
 
   t.ok([...agent.sockets].length <= 1)
-
-  server.close()
 })
 
 test('free connection after redirect', async (t) => {
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
+  t.plan(1)
 
   let redirected = false
 
-  server.on('request', (req, res) => {
+  const port = await createServer(t, (req, res) => {
     if (!redirected) {
       redirected = true
 
@@ -361,17 +403,12 @@ test('free connection after redirect', async (t) => {
   }
 
   t.ok([...agent.sockets].length <= 1)
-
-  server.close()
 })
 
 test('signal', async (t) => {
   t.plan(2)
 
-  const server = http.createServer()
-  await listen(server, 0)
-
-  const { port } = server.address()
+  const port = await createServer(t)
 
   await t.exception(
     fetch(`http://localhost:${port}`, { signal: AbortSignal.abort(new Error('boom!')) }),
@@ -382,8 +419,6 @@ test('signal', async (t) => {
     fetch(`http://localhost:${port}`, { signal: AbortSignal.timeout(100) }),
     /TimeoutError/
   )
-
-  server.close()
 })
 
 test('suspend agent', async (t) => {
@@ -484,3 +519,12 @@ test('headers iterator methods', async (t) => {
     ['content-type', 'text/plain']
   ])
 })
+
+async function createServer(t, handler) {
+  const server = http.createServer(handler)
+  t.teardown(() => server.close())
+
+  await listen(server, 0)
+
+  return server.address().port
+}
