@@ -90,7 +90,7 @@ test('json', async (t) => {
   server.close()
 })
 
-test.solo('response clone', async (t) => {
+test('response clone', async (t) => {
   t.plan(2)
 
   const server = http.createServer()

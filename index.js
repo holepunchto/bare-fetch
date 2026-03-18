@@ -1,6 +1,6 @@
 const http = require('bare-http1')
 const https = require('bare-https')
-const { ReadableStream, isReadableStream } = require('bare-stream/web')
+const { ReadableStream } = require('bare-stream/web')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
 const ResponseStream = require('./lib/response-stream')
@@ -136,8 +136,8 @@ function isSameOrigin(a, b) {
 function abort(reject, req, res) {
   const { reason } = req.signal
 
-  if (isReadableStream(req.body)) req.body.cancel(reason)
-  if (isReadableStream(res.body)) res.body.cancel(reason)
+  if (req.body !== null) req.body.cancel(reason)
+  if (res.body !== null) res.body.cancel(reason)
 
   reject(reason)
 }
