@@ -482,7 +482,7 @@ test('signal, response body aborted', async (t) => {
 
   controller.abort()
 
-  await t.exception(res.text(), /AbortError/)
+  await t.exception(res.text(), /BODY_UNUSABLE/)
 })
 
 test('signal, response body aborted during read', async (t) => {
