@@ -3,7 +3,7 @@ const listen = require('listen-async')
 const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
-const { AbortSignal } = require('bare-abort-controller')
+const { AbortSignal, AbortController } = require('bare-abort-controller')
 
 const fetch = require('.')
 
@@ -421,11 +421,96 @@ test('signal', async (t) => {
   )
 })
 
-test('suspend agent', async (t) => {
-  const server = http.createServer((req, res) => res.end())
-  await listen(server, 0)
+test('signal, multiple requests cancellation', async (t) => {
+  t.plan(2)
 
-  const { port } = server.address()
+  const port = await createServer(t, (req, res) => res.end())
+
+  const controller = new AbortController()
+
+  const fetchA = fetch(`http://localhost:${port}`, { signal: controller.signal })
+  const fetchB = fetch(`http://localhost:${port}`, { signal: controller.signal })
+
+  controller.abort()
+
+  await t.exception(fetchA, /AbortError/)
+  await t.exception(fetchB, /AbortError/)
+})
+
+test('signal, reject if signal has already been aborted', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => res.end())
+
+  const controller = new AbortController()
+  controller.abort()
+
+  await t.exception(fetch(`http://localhost:${port}`, { signal: controller.signal }), /AbortError/)
+})
+
+test('signal, redirect aborted', async (t) => {
+  t.plan(1)
+
+  const controller = new AbortController()
+
+  let redirected = false
+
+  const port = await createServer(t, (req, res) => {
+    if (!redirected) {
+      redirected = true
+
+      res.writeHead(303, { location: `http://localhost:${port}/dest` })
+      res.end()
+    } else {
+      controller.abort()
+
+      res.end()
+    }
+  })
+
+  await t.exception(fetch(`http://localhost:${port}`, { signal: controller.signal }), /AbortError/)
+})
+
+test('signal, response body aborted', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => res.end('message'))
+
+  const controller = new AbortController()
+
+  const res = await fetch(`http://localhost:${port}`, { signal: controller.signal })
+
+  controller.abort()
+
+  await t.exception(res.text(), /BODY_UNUSABLE/)
+})
+
+test('signal, response body aborted during read', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => {
+    res.write('This is th')
+
+    setTimeout(() => res.write('e correct message.'), 500)
+  })
+
+  const controller = new AbortController()
+
+  const res = await fetch(`http://localhost:${port}`, { signal: controller.signal })
+
+  const promise = res.text()
+
+  setTimeout(async () => {
+    controller.abort()
+
+    await t.exception(promise, /AbortError/)
+  })
+})
+
+test('suspend agent', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => res.end())
 
   const agent = new http.Agent()
   agent.suspend()
@@ -434,8 +519,6 @@ test('suspend agent', async (t) => {
 
   agent.resume()
   await t.execution(res)
-
-  server.close()
 })
 
 test('response constructor', async (t) => {
