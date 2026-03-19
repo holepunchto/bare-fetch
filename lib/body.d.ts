@@ -17,8 +17,8 @@ interface Body {
 }
 
 declare class Body {
-  constructor(
-    body:
+  private constructor(
+    body?:
       | ReadableStream
       | FormData
       | Blob
@@ -26,7 +26,8 @@ declare class Body {
       | ArrayBufferView
       | ArrayBuffer
       | string
-      | null
+      | null,
+    type?: string | null
   )
 }
 
