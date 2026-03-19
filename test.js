@@ -190,6 +190,23 @@ test('post form data', async (t) => {
   await fetch(`http://localhost:${port}`, { method: 'POST', body })
 })
 
+test('post WHATWG URLSearchParams', async (t) => {
+  t.plan(2)
+
+  const port = await createServer(t, async (req, res) => {
+    t.is(req.headers['content-type'], 'application/x-www-form-urlencoded;charset=UTF-8')
+
+    req.on('data', (data) => t.alike(data, Buffer.from('a=1')))
+
+    res.end()
+  })
+
+  const params = new URLSearchParams()
+  params.append('a', '1')
+
+  await fetch(`http://localhost:${port}`, { method: 'POST', body: params })
+})
+
 test('redirect', async (t) => {
   t.plan(3)
 
