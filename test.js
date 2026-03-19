@@ -3,7 +3,6 @@ const listen = require('listen-async')
 const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
-const { URLSearchParams } = require('bare-url') // TODO Remove when Bare is updated
 const { AbortSignal, AbortController } = require('bare-abort-controller')
 
 const fetch = require('.')
