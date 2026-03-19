@@ -136,8 +136,8 @@ function isSameOrigin(a, b) {
 function abort(reject, req, res) {
   const { reason } = req.signal
 
-  if (req.body !== null) req.body.cancel(reason)
-  if (res.body !== null) res.body.cancel(reason)
+  if (req._body !== null) req._body.cancel(reason)
+  if (res._body !== null) res._body.cancel(reason)
 
   reject(reason)
 }
