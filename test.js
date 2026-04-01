@@ -488,6 +488,19 @@ test('signal, redirect aborted', async (t) => {
   await t.exception(fetch(`http://localhost:${port}`, { signal: controller.signal }), /AbortError/)
 })
 
+test('signal, aborted when response arrives', async (t) => {
+  t.plan(1)
+
+  const controller = new AbortController()
+
+  const port = await createServer(t, (_, res) => {
+    controller.abort(new Error('Aborted'))
+    res.end()
+  })
+
+  await t.exception(fetch(`http://localhost:${port}`, { signal: controller.signal }), /Aborted/)
+})
+
 test('signal, response body aborted', async (t) => {
   t.plan(1)
 
