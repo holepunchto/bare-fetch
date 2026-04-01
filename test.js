@@ -501,6 +501,30 @@ test('signal, aborted when response arrives', async (t) => {
   await t.exception(fetch(`http://localhost:${port}`, { signal: controller.signal }), /Aborted/)
 })
 
+test('signal, free connection when aborted on response', async (t) => {
+  t.plan(129)
+
+  let controller
+
+  const port = await createServer(t, (_, res) => {
+    controller.abort()
+    res.end()
+  })
+
+  const agent = new http.Agent()
+
+  for (let i = 0; i < 128; i++) {
+    controller = new AbortController()
+
+    await t.exception(
+      fetch(`http://localhost:${port}`, { signal: controller.signal, agent }),
+      /AbortError/
+    )
+  }
+
+  t.ok([...agent.sockets].length <= 1)
+})
+
 test('signal, response body aborted', async (t) => {
   t.plan(1)
 

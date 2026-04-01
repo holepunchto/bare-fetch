@@ -77,7 +77,11 @@ module.exports = exports = function fetch(input, init = {}) {
         headers: Object.fromEntries(request._headers)
       },
       (res) => {
-        if (request.signal && request.signal.aborted) return abort(reject, request, response)
+        if (request.signal && request.signal.aborted) {
+          res.resume()
+
+          return abort(reject, request, response)
+        }
 
         if (res.headers.location && isRedirectStatus(res.statusCode)) {
           res.resume()
