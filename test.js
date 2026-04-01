@@ -491,15 +491,12 @@ test('signal, redirect aborted', async (t) => {
 test('signal, aborted when response arrives', async (t) => {
   t.plan(1)
 
-  const reason = new Error('aborted')
-  reason.name = 'AbortError'
-
   let _aborted = false
   const signal = {
     get aborted() {
       return _aborted
     },
-    reason,
+    reason: Object.assign(new Error('aborted'), { name: 'AbortError' }),
     addEventListener() {}
   }
 
