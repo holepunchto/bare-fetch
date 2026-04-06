@@ -129,7 +129,7 @@ module.exports = exports = function fetch(input, init = {}) {
     }
 
     function onclose() {
-      reject(errors.NETWORK_ERROR('Network error', http.errors.CONNECTION_LOST()))
+      onerror(http.errors.CONNECTION_LOST())
     }
   }
 }
