@@ -585,7 +585,7 @@ test('suspend agent, inflight request', async (t) => {
   const res = fetch(`http://localhost:${port}`, { agent })
 
   agent.suspend()
-  await t.exception(res, /CONNECTION_LOST/)
+  await t.exception(res, /NETWORK_ERROR/)
 })
 
 test('response constructor', async (t) => {
