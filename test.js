@@ -575,6 +575,19 @@ test('suspend agent', async (t) => {
   await t.execution(res)
 })
 
+test('suspend agent, inflight request', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => res.end())
+
+  const agent = new http.Agent()
+
+  const res = fetch(`http://localhost:${port}`, { agent })
+
+  agent.suspend()
+  await t.exception(res, /CONNECTION_LOST/)
+})
+
 test('response constructor', async (t) => {
   const res = new Response(null, { status: 123 })
 

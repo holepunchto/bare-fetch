@@ -77,6 +77,8 @@ module.exports = exports = function fetch(input, init = {}) {
         headers: Object.fromEntries(request._headers)
       },
       (res) => {
+        req.off('close', onclose)
+
         if (request.signal && request.signal.aborted) {
           res.resume()
 
@@ -108,7 +110,7 @@ module.exports = exports = function fetch(input, init = {}) {
       }
     )
 
-    req.on('error', (err) => reject(errors.NETWORK_ERROR('Network error', err)))
+    req.on('error', onerror).on('close', onclose)
 
     try {
       if (request._body) {
@@ -118,6 +120,14 @@ module.exports = exports = function fetch(input, init = {}) {
       req.end()
     } catch (err) {
       req.destroy(err)
+    }
+
+    function onerror(err) {
+      reject(errors.NETWORK_ERROR('Network error', err))
+    }
+
+    function onclose() {
+      reject(errors.CONNECTION_LOST('Connection lost'))
     }
   }
 }
