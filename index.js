@@ -123,6 +123,8 @@ module.exports = exports = function fetch(input, init = {}) {
     }
 
     function onerror(err) {
+      req.off('close', onclose)
+
       reject(errors.NETWORK_ERROR('Network error', err))
     }
 
