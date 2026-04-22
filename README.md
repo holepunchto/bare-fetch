@@ -1,6 +1,6 @@
 # bare-fetch
 
-WHATWG Fetch implementation for <https://github.com/nicolo-ribaudo/tc39-proposal-bare>.
+WHATWG Fetch implementation for Bare.
 
 ```
 npm i bare-fetch
