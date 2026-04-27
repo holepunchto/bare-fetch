@@ -14,6 +14,7 @@ interface Body {
   arrayBuffer(): Promise<ArrayBuffer>
   text(): Promise<string>
   json(): Promise<JSON>
+  formData(): Promise<FormData>
 }
 
 declare class Body {

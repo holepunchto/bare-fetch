@@ -150,7 +150,7 @@ test('request argument', async (t) => {
 test('post string', async (t) => {
   t.plan(1)
 
-  const port = await createServer(t, async (req, res) => {
+  const port = await createServer(t, (req, res) => {
     req.on('data', (data) => t.alike(data, Buffer.from('message')))
     res.end()
   })
@@ -193,7 +193,7 @@ test('post form data', async (t) => {
 test('post WHATWG URLSearchParams', async (t) => {
   t.plan(2)
 
-  const port = await createServer(t, async (req, res) => {
+  const port = await createServer(t, (req, res) => {
     t.is(req.headers['content-type'], 'application/x-www-form-urlencoded;charset=UTF-8')
 
     req.on('data', (data) => t.alike(data, Buffer.from('a=1')))
@@ -588,7 +588,7 @@ test('suspend agent, inflight request', async (t) => {
   await t.exception(res, /NETWORK_ERROR/)
 })
 
-test('response constructor', async (t) => {
+test('response constructor', (t) => {
   const res = new Response(null, { status: 123 })
 
   t.is(res.body, null)
@@ -619,7 +619,7 @@ test('response constructor, arraybuffer body', async (t) => {
   t.alike(await res.buffer(), Buffer.from([1, 2, 3, 4]))
 })
 
-test('construct request from existing request', async (t) => {
+test('construct request from existing request', (t) => {
   const req = new Request('https://example.com', {
     method: 'POST',
     headers: [['content-type', 'text/plain']]
@@ -632,7 +632,7 @@ test('construct request from existing request', async (t) => {
   t.is(clone.headers.get('content-type'), 'text/plain')
 })
 
-test('normalize method to uppercase', async (t) => {
+test('normalize method to uppercase', (t) => {
   const req = new Request('https://example.com', { method: 'post' })
   t.is(req.method, 'POST')
 
@@ -646,7 +646,7 @@ test('normalize method to uppercase', async (t) => {
   t.is(req4.method, 'PATCH')
 })
 
-test('headers iterator methods', async (t) => {
+test('headers iterator methods', (t) => {
   const headers = new Headers({
     'Content-Type': 'text/plain',
     Accept: 'application/json'
@@ -668,6 +668,117 @@ test('headers iterator methods', async (t) => {
     ['accept', 'application/json'],
     ['content-type', 'text/plain']
   ])
+})
+
+test('formData, url encoded', async (t) => {
+  t.plan(2)
+
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/x-www-form-urlencoded' })
+    res.end('foo=bar&baz=qux')
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+  const form = await res.formData()
+
+  t.is(form.get('foo'), 'bar')
+  t.is(form.get('baz'), 'qux')
+})
+
+test('formData, multipart', async (t) => {
+  t.plan(2)
+
+  const boundary = '----TestBoundary123'
+
+  const body =
+    `------TestBoundary123\r\n` +
+    `Content-Disposition: form-data; name="field1"\r\n` +
+    `\r\n` +
+    `value1\r\n` +
+    `------TestBoundary123\r\n` +
+    `Content-Disposition: form-data; name="field2"\r\n` +
+    `\r\n` +
+    `value2\r\n` +
+    `------TestBoundary123--\r\n`
+
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': `multipart/form-data; boundary=${boundary}`
+    })
+    res.end(body)
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+  const form = await res.formData()
+
+  t.is(form.get('field1'), 'value1')
+  t.is(form.get('field2'), 'value2')
+})
+
+test('formData, multipart with file', async (t) => {
+  t.plan(3)
+
+  const boundary = '----TestBoundary456'
+
+  const body =
+    `------TestBoundary456\r\n` +
+    `Content-Disposition: form-data; name="file"; filename="test.txt"\r\n` +
+    `Content-Type: text/plain\r\n` +
+    `\r\n` +
+    `file contents\r\n` +
+    `------TestBoundary456--\r\n`
+
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': `multipart/form-data; boundary=${boundary}`
+    })
+    res.end(body)
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+  const form = await res.formData()
+  const file = form.get('file')
+
+  t.is(file.name, 'test.txt')
+  t.is(file.type, 'text/plain')
+  t.is(await file.text(), 'file contents')
+})
+
+test('formData, multipart roundtrip', async (t) => {
+  t.plan(2)
+
+  const port = await createServer(t, async (req, res) => {
+    res.writeHead(200, { 'Content-Type': req.headers['content-type'] })
+
+    for await (const chunk of req) {
+      res.write(chunk)
+    }
+
+    res.end()
+  })
+
+  const sent = new FormData()
+  sent.append('name', 'Alice')
+  sent.append('greeting', 'Hello world')
+
+  const res = await fetch(`http://localhost:${port}`, { method: 'POST', body: sent })
+  const received = await res.formData()
+
+  t.is(received.get('name'), 'Alice')
+  t.is(received.get('greeting'), 'Hello world')
+})
+
+test('formData, unsupported content type', async (t) => {
+  t.plan(1)
+
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end('{}')
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  await t.exception(res.formData(), /INVALID_FORM_DATA/)
 })
 
 async function createServer(t, handler) {

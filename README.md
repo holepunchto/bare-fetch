@@ -78,6 +78,30 @@ The request body as a `ReadableStream`, or `null`.
 
 Whether the body stream has already been consumed.
 
+#### `request.buffer()`
+
+Consume the body and return a `Buffer`.
+
+#### `request.bytes()`
+
+Consume the body and return a `Uint8Array`.
+
+#### `request.arrayBuffer()`
+
+Consume the body and return an `ArrayBuffer`.
+
+#### `request.text()`
+
+Consume the body and return a UTF-8 string.
+
+#### `request.json()`
+
+Consume the body and return a parsed JSON value.
+
+#### `request.formData()`
+
+Consume the body and return a `FormData` object. Supports `multipart/form-data` and `application/x-www-form-urlencoded` content types.
+
 #### `request.clone()`
 
 Clone the request. Throws if the body has already been consumed.
@@ -135,6 +159,10 @@ Consume the body and return a UTF-8 string.
 #### `response.json()`
 
 Consume the body and return a parsed JSON value.
+
+#### `response.formData()`
+
+Consume the body and return a `FormData` object. Supports `multipart/form-data` and `application/x-www-form-urlencoded` content types.
 
 #### `response.clone()`
 
