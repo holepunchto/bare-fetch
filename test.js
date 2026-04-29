@@ -781,6 +781,18 @@ test('formData, unsupported content type', async (t) => {
   await t.exception(res.formData(), /INVALID_FORM_DATA/)
 })
 
+test('fetch example.com', async (t) => {
+  t.plan(5)
+
+  const res = await fetch('https://example.com')
+
+  t.is(res.ok, true)
+  t.is(res.url, 'https://example.com/')
+  t.is(res.status, 200)
+  t.is(res.statusText, 'OK')
+  t.is(res.redirected, false)
+})
+
 async function createServer(t, handler) {
   const server = http.createServer(handler)
   t.teardown(() => server.close())
