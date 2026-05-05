@@ -646,6 +646,23 @@ test('normalize method to uppercase', (t) => {
   t.is(req4.method, 'PATCH')
 })
 
+test('headers reject CRLF in value', (t) => {
+  const headers = new Headers()
+
+  t.exception(() => headers.append('X-Foo', 'bar\r\nEvil: smuggled'), /INVALID_HEADER_VALUE/)
+  t.exception(() => headers.set('X-Foo', 'bar\nEvil: smuggled'), /INVALID_HEADER_VALUE/)
+  t.exception(() => headers.append('X-Foo', 'bar\0baz'), /INVALID_HEADER_VALUE/)
+})
+
+test('headers reject invalid name', (t) => {
+  const headers = new Headers()
+
+  t.exception(() => headers.append('X-Foo:Evil', 'bar'), /INVALID_HEADER_NAME/)
+  t.exception(() => headers.set('X-Foo Evil', 'bar'), /INVALID_HEADER_NAME/)
+  t.exception(() => headers.append('X-Foo\r\nEvil', 'bar'), /INVALID_HEADER_NAME/)
+  t.exception(() => headers.append('', 'bar'), /INVALID_HEADER_NAME/)
+})
+
 test('headers iterator methods', (t) => {
   const headers = new Headers({
     'Content-Type': 'text/plain',
