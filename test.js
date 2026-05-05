@@ -649,10 +649,7 @@ test('normalize method to uppercase', (t) => {
 test('headers reject CRLF in value', (t) => {
   const headers = new Headers()
 
-  t.exception(
-    () => headers.append('X-Foo', 'bar\r\nEvil: smuggled'),
-    /INVALID_HEADER_VALUE/
-  )
+  t.exception(() => headers.append('X-Foo', 'bar\r\nEvil: smuggled'), /INVALID_HEADER_VALUE/)
   t.exception(() => headers.set('X-Foo', 'bar\nEvil: smuggled'), /INVALID_HEADER_VALUE/)
   t.exception(() => headers.append('X-Foo', 'bar\0baz'), /INVALID_HEADER_VALUE/)
 })
