@@ -1,5 +1,6 @@
 const http = require('bare-http1')
 const https = require('bare-https')
+const { now, markResourceTiming } = require('bare-performance')
 const { ReadableStream } = require('bare-stream/web')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
@@ -18,6 +19,8 @@ module.exports = exports = function fetch(input, init = {}) {
   })
 
   const response = new Response()
+
+  const timingInfo = { startTime: now(), endTime: 0 }
 
   process(input)
 
@@ -98,7 +101,17 @@ module.exports = exports = function fetch(input, init = {}) {
           return process(url, request._url)
         }
 
-        response._body = new ReadableStream(new ResponseStream(res))
+        const responseStream = new ResponseStream(res)
+
+        responseStream.on('end', function processEndOfBody() {
+          timingInfo.endTime = now()
+
+          const requestURL = response._urls[0].href
+
+          markResourceTiming(timingInfo, requestURL, 'fetch', {}, '', {}, res.statusCode)
+        })
+
+        response._body = new ReadableStream(responseStream)
         response._status = res.statusCode
         response._statusText = res.statusMessage
 

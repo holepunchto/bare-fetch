@@ -4,6 +4,7 @@ const http = require('bare-http1')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
 const { AbortSignal, AbortController } = require('bare-abort-controller')
+const { PerformanceObserver, clearResourceTimings } = require('bare-performance')
 
 const fetch = require('.')
 
@@ -808,6 +809,38 @@ test('fetch example.com', async (t) => {
   t.is(res.status, 200)
   t.is(res.statusText, 'OK')
   t.is(res.redirected, false)
+})
+
+test('resource timing', async (t) => {
+  t.plan(7)
+
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(200)
+    res.end()
+  })
+
+  const obs = new PerformanceObserver((list) => {
+    const entries = list.getEntries()
+
+    t.is(entries.length, 1)
+
+    const entry = entries[0]
+
+    t.is(entry.name, `http://localhost:${port}/`)
+    t.is(entry.entryType, 'resource')
+    t.is(entry.initiatorType, 'fetch')
+    t.is(entry.responseStatus, 200)
+    t.ok(entry.startTime > 0)
+    t.ok(entry.duration > 0)
+
+    obs.disconnect()
+    clearResourceTimings()
+  })
+
+  obs.observe({ entryTypes: ['resource'] })
+
+  const res = await fetch(`http://localhost:${port}`)
+  await res.text()
 })
 
 async function createServer(t, handler) {
