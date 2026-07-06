@@ -1,2 +1,3 @@
-body.d.ts
-errors.d.ts
+# https://github.com/holepunchto/lunte/issues/17
+index.d.ts
+lib/request.d.ts
