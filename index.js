@@ -72,6 +72,8 @@ module.exports = exports = function fetch(input, init = {}) {
 
     while (agent.suspended) await agent.resumed
 
+    let responseStream
+
     const req = protocol.request(
       request._url,
       {
@@ -101,15 +103,9 @@ module.exports = exports = function fetch(input, init = {}) {
           return process(url, request._url)
         }
 
-        const responseStream = new ResponseStream(res)
+        responseStream = new ResponseStream(res)
 
-        responseStream.on('end', function processEndOfBody() {
-          timingInfo.endTime = now()
-
-          const requestURL = response._urls[0].href
-
-          markResourceTiming(timingInfo, requestURL, 'fetch', {}, '', {}, res.statusCode)
-        })
+        responseStream.once('end', processResponseEndOfBody)
 
         response._body = new ReadableStream(responseStream)
         response._status = res.statusCode
@@ -133,6 +129,12 @@ module.exports = exports = function fetch(input, init = {}) {
       req.end()
     } catch (err) {
       req.destroy(err)
+    }
+
+    function processResponseEndOfBody() {
+      timingInfo.endTime = now()
+
+      markResourceTiming(timingInfo, response._urls[0].href, 'fetch', {}, '', {}, response.status)
     }
 
     function onerror(err) {
