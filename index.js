@@ -1,5 +1,7 @@
 const http = require('bare-http1')
 const https = require('bare-https')
+const { now, markResourceTiming } = require('bare-performance')
+const { finished } = require('bare-stream')
 const { ReadableStream } = require('bare-stream/web')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
@@ -18,6 +20,8 @@ module.exports = exports = function fetch(input, init = {}) {
   })
 
   const response = new Response()
+
+  const timingInfo = { startTime: now(), endTime: 0 }
 
   process(input)
 
@@ -98,9 +102,13 @@ module.exports = exports = function fetch(input, init = {}) {
           return process(url, request._url)
         }
 
-        response._body = new ReadableStream(new ResponseStream(res))
+        const responseStream = new ResponseStream(res)
+
+        response._body = new ReadableStream(responseStream)
         response._status = res.statusCode
         response._statusText = res.statusMessage
+
+        finished(responseStream, { cleanup: true }, processResponseEndOfBody)
 
         for (const [name, value] of Object.entries(res.headers)) {
           response._headers.set(name, value)
@@ -120,6 +128,14 @@ module.exports = exports = function fetch(input, init = {}) {
       req.end()
     } catch (err) {
       req.destroy(err)
+    }
+
+    function processResponseEndOfBody(err) {
+      if (err) return
+
+      timingInfo.endTime = now()
+
+      markResourceTiming(timingInfo, response._urls[0].href, 'fetch', {}, '', {}, response.status)
     }
 
     function onerror(err) {
