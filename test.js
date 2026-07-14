@@ -294,6 +294,61 @@ test('response type', async (t) => {
   t.is(res.clone().type, 'basic')
 })
 
+test('response type does not clash with body mime type', (t) => {
+  const res = new Response(new URLSearchParams([['a', '1']]))
+
+  t.is(res.type, 'default')
+  t.is(res.headers.get('content-type'), 'application/x-www-form-urlencoded;charset=UTF-8')
+})
+
+test('Response.error', (t) => {
+  const res = Response.error()
+
+  t.is(res.type, 'error')
+  t.is(res.status, 0)
+  t.is(res.statusText, '')
+  t.is(res.body, null)
+})
+
+test('Response.redirect', (t) => {
+  const res = Response.redirect('https://example.com/foo', 301)
+
+  t.is(res.status, 301)
+  t.is(res.headers.get('location'), 'https://example.com/foo')
+
+  t.is(Response.redirect('https://example.com/').status, 302)
+
+  t.exception(() => Response.redirect('https://example.com/', 200), /INVALID_REDIRECT_STATUS/)
+  t.exception(() => Response.redirect('not a url'), /INVALID_URL/)
+})
+
+test('Response.json', async (t) => {
+  const res = Response.json({ a: 1 })
+
+  t.is(res.type, 'default')
+  t.is(res.status, 200)
+  t.is(res.headers.get('content-type'), 'application/json')
+  t.alike(await res.json(), { a: 1 })
+})
+
+test('Response.json respects init', async (t) => {
+  const res = Response.json(
+    { a: 1 },
+    { status: 201, headers: new Headers([['Content-Type', 'application/problem+json']]) }
+  )
+
+  t.is(res.status, 201)
+  t.is(res.headers.get('content-type'), 'application/problem+json')
+})
+
+test('Response.json rejects non-serializable data', (t) => {
+  const circular = {}
+  circular.self = circular
+
+  t.exception(() => Response.json(circular), /INVALID_JSON/)
+  t.exception(() => Response.json(undefined), /INVALID_JSON/)
+})
+
 test('request clone', async (t) => {
   const req = new Request('http://localhost', { body: 'Hello world' })
   const clone = req.clone()
@@ -309,6 +364,25 @@ test('request clone preserves signal', (t) => {
   const clone = req.clone()
 
   t.is(clone.signal, controller.signal)
+})
+
+test('request sets content-type from body', (t) => {
+  const req = new Request('http://localhost', {
+    method: 'POST',
+    body: new URLSearchParams([['a', '1']])
+  })
+
+  t.is(req.headers.get('content-type'), 'application/x-www-form-urlencoded;charset=UTF-8')
+})
+
+test('request keeps explicit content-type', (t) => {
+  const req = new Request('http://localhost', {
+    method: 'POST',
+    body: new URLSearchParams([['a', '1']]),
+    headers: new Headers([['Content-Type', 'text/plain']])
+  })
+
+  t.is(req.headers.get('content-type'), 'text/plain')
 })
 
 test('compression', async (t) => {
