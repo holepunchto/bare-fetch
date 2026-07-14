@@ -21,6 +21,9 @@ module.exports = exports = function fetch(input, init = {}) {
 
   const response = new Response()
 
+  // https://fetch.spec.whatwg.org/#concept-filtered-response-basic
+  response._type = 'basic'
+
   const timingInfo = { startTime: now(), endTime: 0 }
 
   process(input)

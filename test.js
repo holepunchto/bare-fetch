@@ -281,6 +281,19 @@ test('response clone', async (t) => {
   t.is(await clone.text(), sent)
 })
 
+test('response type', async (t) => {
+  t.plan(3)
+
+  t.is(new Response().type, 'default')
+
+  const port = await createServer(t, (req, res) => res.end())
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  t.is(res.type, 'basic')
+  t.is(res.clone().type, 'basic')
+})
+
 test('request clone', async (t) => {
   const req = new Request('http://localhost', { body: 'Hello world' })
   const clone = req.clone()
