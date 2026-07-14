@@ -22,6 +22,10 @@ interface Response extends Body {
 
 declare class Response {
   constructor(body: unknown, init?: ResponseInit)
+
+  static error(): Response
+  static redirect(url: string | URL, status?: HTTPStatusCode): Response
+  static json(data: unknown, init?: ResponseInit): Response
 }
 
 export = Response

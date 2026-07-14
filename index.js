@@ -68,10 +68,6 @@ module.exports = exports = function fetch(input, init = {}) {
       request._headers.set('user-agent', `Bare/${Bare.version.substring(1)}`)
     }
 
-    if (!request._headers.has('content-type') && request._type) {
-      request._headers.set('content-type', request._type)
-    }
-
     const agent = request._agent || protocol.globalAgent
 
     while (agent.suspended) await agent.resumed
