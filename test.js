@@ -666,33 +666,15 @@ test('normalize method to uppercase', (t) => {
 })
 
 test('reject invalid method', (t) => {
-  t.exception(
-    () => new Request('https://example.com', { method: 'in valid' }),
-    /INVALID_METHOD/
-  )
-  t.exception(
-    () => new Request('https://example.com', { method: 'G/E/T' }),
-    /INVALID_METHOD/
-  )
-  t.exception(
-    () => new Request('https://example.com', { method: '' }),
-    /INVALID_METHOD/
-  )
+  t.exception(() => new Request('https://example.com', { method: 'in valid' }), /INVALID_METHOD/)
+  t.exception(() => new Request('https://example.com', { method: 'G/E/T' }), /INVALID_METHOD/)
+  t.exception(() => new Request('https://example.com', { method: '' }), /INVALID_METHOD/)
 })
 
 test('reject forbidden method', (t) => {
-  t.exception(
-    () => new Request('https://example.com', { method: 'CONNECT' }),
-    /FORBIDDEN_METHOD/
-  )
-  t.exception(
-    () => new Request('https://example.com', { method: 'trace' }),
-    /FORBIDDEN_METHOD/
-  )
-  t.exception(
-    () => new Request('https://example.com', { method: 'Track' }),
-    /FORBIDDEN_METHOD/
-  )
+  t.exception(() => new Request('https://example.com', { method: 'CONNECT' }), /FORBIDDEN_METHOD/)
+  t.exception(() => new Request('https://example.com', { method: 'trace' }), /FORBIDDEN_METHOD/)
+  t.exception(() => new Request('https://example.com', { method: 'Track' }), /FORBIDDEN_METHOD/)
 })
 
 test('headers reject CRLF in value', (t) => {
