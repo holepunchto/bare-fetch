@@ -289,6 +289,15 @@ test('request clone', async (t) => {
   t.is(await clone.text(), 'Hello world')
 })
 
+test('request clone preserves signal', (t) => {
+  const controller = new AbortController()
+
+  const req = new Request('http://localhost', { signal: controller.signal })
+  const clone = req.clone()
+
+  t.is(clone.signal, controller.signal)
+})
+
 test('compression', async (t) => {
   t.plan(4)
 
@@ -631,6 +640,15 @@ test('construct request from existing request', (t) => {
   t.is(clone.url, 'https://example.com/')
   t.is(clone.method, 'POST')
   t.is(clone.headers.get('content-type'), 'text/plain')
+})
+
+test('construct request from existing request preserves signal', (t) => {
+  const controller = new AbortController()
+
+  const req = new Request('https://example.com', { signal: controller.signal })
+
+  t.is(new Request(req).signal, controller.signal)
+  t.is(new Request(req, { signal: null }).signal, null)
 })
 
 test('normalize method to uppercase', (t) => {
