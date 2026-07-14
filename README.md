@@ -54,6 +54,8 @@ The `Headers` class. See below.
 
 Create a new request. `input` may be a URL string, a `URL` object, or another `Request` object. `init` is an optional options object, identical to the one accepted by `fetch()`.
 
+Throws if `method` is not a valid HTTP method or is a forbidden method (`CONNECT`, `TRACE`, `TRACK`). If a body is provided and no `Content-Type` header is set, one is inferred from the body.
+
 #### `request.url`
 
 The request URL as a string.
@@ -107,6 +109,38 @@ Consume the body and return a `FormData` object. Supports `multipart/form-data` 
 Clone the request. Throws if the body has already been consumed.
 
 ### `Response`
+
+#### `const response = new Response([body][, init])`
+
+Create a new response. `body` may be a string, `Buffer`, `ArrayBuffer`, typed array, `Blob`, `FormData`, `URLSearchParams`, `ReadableStream`, or `null`. `init` is an optional options object.
+
+Options include:
+
+```js
+init = {
+  status: 200,
+  statusText: '',
+  headers: new Headers()
+}
+```
+
+If a body is provided and no `Content-Type` header is set, one is inferred from the body.
+
+#### `Response.error()`
+
+Return a new response representing a network error. Its `type` is `'error'`, `status` is `0`, and body is `null`.
+
+#### `Response.redirect(url[, status])`
+
+Return a new redirect response to `url` with the given `status` (`302` by default). Throws if `url` is invalid or `status` is not a redirect status (`301`, `302`, `303`, `307`, `308`).
+
+#### `Response.json(data[, init])`
+
+Return a new response with `data` serialized to JSON as its body. Sets the `Content-Type` to `application/json` unless `init.headers` already provides one. Throws if `data` cannot be serialized to JSON.
+
+#### `response.type`
+
+The response type: `'basic'` for responses from the network, `'default'` for responses created directly, or `'error'` for network errors.
 
 #### `response.url`
 
