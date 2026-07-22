@@ -805,6 +805,17 @@ test('headers iterator methods', (t) => {
   ])
 })
 
+test('headers getSetCookie', (t) => {
+  t.plan(2)
+
+  const headers = new Headers()
+  headers.append('set-cookie', 'session=abc')
+  headers.append('set-cookie', 'theme=dark')
+
+  t.is(headers.get('set-cookie'), 'session=abc, theme=dark')
+  t.alike(headers.getSetCookie(), ['session=abc', 'theme=dark'])
+})
+
 test('formData, url encoded', async (t) => {
   t.plan(2)
 
