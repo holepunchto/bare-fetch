@@ -224,6 +224,10 @@ Get the value of the header `name` as a comma-separated string, or `null` if it 
 
 Return whether the header `name` exists.
 
+#### `headers.getSetCookie()`
+
+Return an array of the values of all `Set-Cookie` headers, in order, without combining them. Unlike `get('set-cookie')`, the values are not joined into a single comma-separated string, since `Set-Cookie` values may themselves contain commas. Returns an empty array if no `Set-Cookie` header is present. The returned array is a copy, so mutating it does not affect the headers.
+
 #### `headers.set(name, value)`
 
 Set the header `name` to `value`, replacing any existing values.
