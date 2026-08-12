@@ -18,7 +18,7 @@ console.log(await res.json())
 
 ## API
 
-See the [full API reference](https://docs.pears.com/reference/bare/modules/bare-fetch).
+See the [`bare-fetch` reference](https://docs.pears.com/reference/bare/modules/bare-fetch).
 
 ## License
 
