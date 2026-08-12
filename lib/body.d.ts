@@ -33,7 +33,8 @@ interface Body {
   json(): Promise<JSON>
   /**
    * @throws {BODY_UNUSABLE} the body has already been consumed.
-   * @throws {INVALID_FORM_DATA} the content type is not form data, or the multipart boundary parameter is missing.
+   * @throws {INVALID_FORM_DATA} the content type is not form data, or the multipart boundary
+   * parameter is missing.
    */
   formData(): Promise<FormData>
 }

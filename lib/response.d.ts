@@ -30,8 +30,10 @@ interface Response extends Body {
 declare class Response {
   /**
    * @param body - The response body, or `null` (default `null`).
-   * @param init - Options; `status` defaults to `200`, `statusText` to `''`, and `headers` to an empty `Headers`.
-   * @throws {BODY_UNUSABLE} `body` is a `ReadableStream` that is locked or has already been consumed.
+   * @param init - Options; `status` defaults to `200`, `statusText` to `''`, and `headers` to an
+   * empty `Headers`.
+   * @throws {BODY_UNUSABLE} `body` is a `ReadableStream` that is locked or has already been
+   * consumed.
    */
   constructor(body: unknown, init?: ResponseInit)
 
