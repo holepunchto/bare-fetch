@@ -45,9 +45,6 @@ declare class Request {
   constructor(input: string | URL | Request, init?: RequestInit)
 }
 
-/**
- * Construct a new `Request` from `input`, which may be a URL string, a `URL`, or another `Request`.
- */
 declare namespace Request {
   export { type RequestInit }
 }
