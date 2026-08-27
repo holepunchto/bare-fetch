@@ -109,7 +109,7 @@ test('arrayBuffer', async (t) => {
 
   const received = await res.arrayBuffer()
 
-  t.alike(received, sent.buffer)
+  t.alike(received, sent.buffer.slice(sent.byteOffset, sent.byteOffset + sent.byteLength))
   t.is(res.bodyUsed, true)
 
   await t.exception(res.arrayBuffer(), /BODY_UNUSABLE/)
