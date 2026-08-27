@@ -38,10 +38,19 @@ module.exports = exports = function fetch(input, init = {}) {
       return reject(err)
     }
 
+    let req = null
+
     if (request.signal) {
       if (request.signal.aborted) return abort(reject, request, response)
 
-      request.signal.addEventListener('abort', (event) => abort(reject, request, response))
+      request.signal.addEventListener('abort', () => {
+        abort(reject, request, response)
+
+        if (req !== null) {
+          req.off('close', onclose)
+          req.destroy()
+        }
+      })
     }
 
     if (response._urls.length > 20) {
@@ -72,7 +81,7 @@ module.exports = exports = function fetch(input, init = {}) {
 
     while (agent.suspended) await agent.resumed
 
-    const req = protocol.request(
+    req = protocol.request(
       request._url,
       {
         agent,
