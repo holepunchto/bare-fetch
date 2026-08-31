@@ -109,7 +109,7 @@ test('arrayBuffer', async (t) => {
 
   const received = await res.arrayBuffer()
 
-  t.alike(received, sent.buffer)
+  t.alike(received, sent.buffer.slice(sent.byteOffset, sent.byteOffset + sent.byteLength))
   t.is(res.bodyUsed, true)
 
   await t.exception(res.arrayBuffer(), /BODY_UNUSABLE/)
@@ -973,7 +973,14 @@ test('resource timing', async (t) => {
 
 async function createServer(t, handler) {
   const server = http.createServer(handler)
-  t.teardown(() => server.close())
+
+  t.teardown(() => {
+    server.close()
+
+    // Some of these servers deliberately never answer, so closing has to take
+    // the connections down rather than wait for exchanges that never finish.
+    server.closeAllConnections()
+  })
 
   await listen(server, 0)
 
