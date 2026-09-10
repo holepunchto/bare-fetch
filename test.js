@@ -58,6 +58,19 @@ test('server error', async (t) => {
   t.is(res.redirected, false)
 })
 
+test('repeated response headers', async (t) => {
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(200, {
+      'Set-Cookie': ['session=abc; Path=/', 'theme=dark; Path=/']
+    })
+    res.end()
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  t.alike(res.headers.getSetCookie(), ['session=abc; Path=/', 'theme=dark; Path=/'])
+})
+
 test('network error', async (t) => {
   t.plan(1)
 

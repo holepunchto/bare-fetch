@@ -119,7 +119,11 @@ module.exports = exports = function fetch(input, init = {}) {
         finished(responseStream, { cleanup: true }, processResponseEndOfBody)
 
         for (const [name, value] of Object.entries(res.headers)) {
-          response._headers.set(name, value)
+          if (Array.isArray(value)) {
+            for (const item of value) response._headers.append(name, item)
+          } else {
+            response._headers.set(name, value)
+          }
         }
 
         resolve(response)
