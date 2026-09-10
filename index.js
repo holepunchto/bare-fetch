@@ -97,8 +97,16 @@ module.exports = exports = function fetch(input, init = {}) {
           return abort(reject, request, response)
         }
 
-        if (res.headers.location && isRedirectStatus(res.statusCode)) {
+        if (
+          res.headers.location &&
+          isRedirectStatus(res.statusCode) &&
+          request.redirect !== 'manual'
+        ) {
           res.resume()
+
+          if (request.redirect === 'error') {
+            return reject(new TypeError('Redirect mode is set to error'))
+          }
 
           let url
           try {

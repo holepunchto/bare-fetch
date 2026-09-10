@@ -13,6 +13,7 @@ import Response from './lib/response'
  * @throws {INVALID_URL} `input` or a redirect `Location` is not a valid URL.
  * @throws {UNKNOWN_PROTOCOL} the URL protocol is neither `http:` nor `https:`.
  * @throws {TOO_MANY_REDIRECTS} more than 20 redirects were followed.
+ * @throws {TypeError} `init.redirect` is `'error'` and a redirect response is received.
  * @throws {NETWORK_ERROR} the underlying request failed or the connection was lost.
  */
 declare function fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>

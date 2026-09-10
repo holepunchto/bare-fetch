@@ -4,6 +4,8 @@ import { AbortSignal } from 'bare-abort-controller'
 import Headers from './headers'
 import Body from './body'
 
+type RequestRedirect = 'error' | 'follow' | 'manual'
+
 interface RequestInit {
   /**
    * The request body: a string, buffer, blob, `FormData`, `URLSearchParams`, or `ReadableStream`
@@ -16,6 +18,11 @@ interface RequestInit {
   headers?: Headers
   /** An `AbortSignal` for aborting the request with an `AbortController` (default `null`). */
   signal?: AbortSignal
+  /**
+   * How fetch handles redirects: follow them, reject the fetch, or return the redirect response
+   * (default `'follow'`).
+   */
+  redirect?: RequestRedirect
   /** The HTTP agent to use, or `null` to use the protocol's global agent (default `null`). */
   agent?: HTTPAgent
 }
@@ -32,6 +39,8 @@ interface Request extends Body {
   readonly headers: Headers
   /** The abort signal associated with the request, or `null`. */
   readonly signal: AbortSignal | null
+  /** How fetch handles redirects for this request. */
+  readonly redirect: RequestRedirect
 }
 
 declare class Request {
@@ -41,12 +50,13 @@ declare class Request {
    * @throws {INVALID_URL} `input` is not a valid URL.
    * @throws {BODY_UNUSABLE} `init.body` is a `ReadableStream` that is locked or has already been
    * consumed.
+   * @throws {TypeError} `init.redirect` is not `'follow'`, `'error'`, or `'manual'`.
    */
   constructor(input: string | URL | Request, init?: RequestInit)
 }
 
 declare namespace Request {
-  export { type RequestInit }
+  export { type RequestInit, type RequestRedirect }
 }
 
 export = Request
