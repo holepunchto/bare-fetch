@@ -50,7 +50,7 @@ declare class Request {
    * @throws {INVALID_URL} `input` is not a valid URL.
    * @throws {BODY_UNUSABLE} `init.body` is a `ReadableStream` that is locked or has already been
    * consumed.
-   * @throws {TypeError} `init.redirect` is not `'follow'`, `'error'`, or `'manual'`.
+   * @throws {INVALID_REDIRECT} `init.redirect` is not `'follow'`, `'error'`, or `'manual'`.
    */
   constructor(input: string | URL | Request, init?: RequestInit)
 }

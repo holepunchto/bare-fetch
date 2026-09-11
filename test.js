@@ -773,9 +773,9 @@ test('request redirect mode', (t) => {
 
   t.exception.all(
     () => new Request('https://example.com', { redirect: 'invalid' }),
-    /Invalid redirect/
+    /INVALID_REDIRECT/
   )
-  t.exception.all(() => new Request('https://example.com', { redirect: null }), /Invalid redirect/)
+  t.exception.all(() => new Request('https://example.com', { redirect: null }), /INVALID_REDIRECT/)
 })
 
 test('normalize method to uppercase', (t) => {
