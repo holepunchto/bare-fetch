@@ -751,6 +751,24 @@ test('construct request from existing request preserves signal', (t) => {
   t.is(new Request(req, { signal: null }).signal, null)
 })
 
+test('request credentials mode', (t) => {
+  const req = new Request('https://example.com', { credentials: 'include' })
+
+  t.is(new Request('https://example.com').credentials, 'same-origin')
+  t.is(req.credentials, 'include')
+  t.is(new Request(req).credentials, 'include')
+  t.is(new Request(req, { credentials: 'omit' }).credentials, 'omit')
+
+  t.exception.all(
+    () => new Request('https://example.com', { credentials: 'invalid' }),
+    /INVALID_CREDENTIALS/
+  )
+  t.exception.all(
+    () => new Request('https://example.com', { credentials: null }),
+    /INVALID_CREDENTIALS/
+  )
+})
+
 test('normalize method to uppercase', (t) => {
   const req = new Request('https://example.com', { method: 'post' })
   t.is(req.method, 'POST')

@@ -4,6 +4,8 @@ import { AbortSignal } from 'bare-abort-controller'
 import Headers from './headers'
 import Body from './body'
 
+type RequestCredentials = 'omit' | 'same-origin' | 'include'
+
 interface RequestInit {
   /**
    * The request body: a string, buffer, blob, `FormData`, `URLSearchParams`, or `ReadableStream`
@@ -16,6 +18,11 @@ interface RequestInit {
   headers?: Headers
   /** An `AbortSignal` for aborting the request with an `AbortController` (default `null`). */
   signal?: AbortSignal
+  /**
+   * Credential mode metadata (default `'same-origin'`). The module has no cookie jar and does not
+   * add or remove cookies based on this value.
+   */
+  credentials?: RequestCredentials
   /** The HTTP agent to use, or `null` to use the protocol's global agent (default `null`). */
   agent?: HTTPAgent
 }
@@ -32,6 +39,11 @@ interface Request extends Body {
   readonly headers: Headers
   /** The abort signal associated with the request, or `null`. */
   readonly signal: AbortSignal | null
+  /**
+   * Credential mode metadata. The module has no cookie jar and does not add or remove cookies
+   * based on this value.
+   */
+  readonly credentials: RequestCredentials
 }
 
 declare class Request {
@@ -41,12 +53,14 @@ declare class Request {
    * @throws {INVALID_URL} `input` is not a valid URL.
    * @throws {BODY_UNUSABLE} `init.body` is a `ReadableStream` that is locked or has already been
    * consumed.
+   * @throws {INVALID_CREDENTIALS} `init.credentials` is not `'omit'`, `'same-origin'`, or
+   * `'include'`.
    */
   constructor(input: string | URL | Request, init?: RequestInit)
 }
 
 declare namespace Request {
-  export { type RequestInit }
+  export { type RequestCredentials, type RequestInit }
 }
 
 export = Request
