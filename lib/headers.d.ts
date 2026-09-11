@@ -20,6 +20,11 @@ interface Headers extends Iterable<[name: string, value: string]> {
    */
   has(name: string): boolean
   /**
+   * Return each `Set-Cookie` header value separately. Unlike `get('set-cookie')`, this does not
+   * combine the values with commas.
+   */
+  getSetCookie(): string[]
+  /**
    * @param name - The header name.
    * @param value - The value to set, replacing any existing values.
    * @throws {INVALID_HEADER_NAME} `name` is empty or contains characters that are not valid in a
