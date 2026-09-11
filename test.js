@@ -58,6 +58,19 @@ test('server error', async (t) => {
   t.is(res.redirected, false)
 })
 
+test('repeated response headers', async (t) => {
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(200, {
+      'Set-Cookie': ['session=abc; Path=/', 'theme=dark; Path=/']
+    })
+    res.end()
+  })
+
+  const res = await fetch(`http://localhost:${port}`)
+
+  t.alike(res.headers.getSetCookie(), ['session=abc; Path=/', 'theme=dark; Path=/'])
+})
+
 test('network error', async (t) => {
   t.plan(1)
 
@@ -778,6 +791,24 @@ test('request redirect mode', (t) => {
   t.exception.all(() => new Request('https://example.com', { redirect: null }), /INVALID_REDIRECT/)
 })
 
+test('request credentials mode', (t) => {
+  const req = new Request('https://example.com', { credentials: 'include' })
+
+  t.is(new Request('https://example.com').credentials, 'same-origin')
+  t.is(req.credentials, 'include')
+  t.is(new Request(req).credentials, 'include')
+  t.is(new Request(req, { credentials: 'omit' }).credentials, 'omit')
+
+  t.exception.all(
+    () => new Request('https://example.com', { credentials: 'invalid' }),
+    /INVALID_CREDENTIALS/
+  )
+  t.exception.all(
+    () => new Request('https://example.com', { credentials: null }),
+    /INVALID_CREDENTIALS/
+  )
+})
+
 test('normalize method to uppercase', (t) => {
   const req = new Request('https://example.com', { method: 'post' })
   t.is(req.method, 'POST')
@@ -854,6 +885,55 @@ test('headers getSetCookie', (t) => {
 
   t.is(headers.get('set-cookie'), 'session=abc, theme=dark')
   t.alike(headers.getSetCookie(), ['session=abc', 'theme=dark'])
+})
+
+test('headers set an array of values', (t) => {
+  t.plan(2)
+
+  const headers = new Headers()
+  headers.set('set-cookie', ['session=abc; Path=/', 'theme=dark; Path=/'])
+
+  t.alike(headers.getSetCookie(), ['session=abc; Path=/', 'theme=dark; Path=/'])
+  t.is(headers.get('set-cookie'), 'session=abc; Path=/, theme=dark; Path=/')
+})
+
+test('headers set an array of values replacing existing values', (t) => {
+  t.plan(1)
+
+  const headers = new Headers()
+  headers.append('set-cookie', 'session=abc')
+  headers.append('set-cookie', 'theme=dark')
+  headers.set('Set-Cookie', ['session=xyz'])
+
+  t.alike(headers.getSetCookie(), ['session=xyz'])
+})
+
+test('headers set an array of values trimming and validating each value', (t) => {
+  t.plan(2)
+
+  const headers = new Headers()
+  headers.set('x-foo', ['  bar  ', 'baz'])
+
+  t.is(headers.get('x-foo'), 'bar, baz')
+  t.exception(() => headers.set('x-foo', ['bar', 'baz\r\nEvil: smuggled']), /INVALID_HEADER_VALUE/)
+})
+
+test('headers set an array of values preserving commas within a value', (t) => {
+  t.plan(2)
+
+  const expires = 'Expires=Sun, 10 Sep 2028 11:21:58 GMT'
+
+  const headers = new Headers()
+  headers.set('set-cookie', [
+    `guest_id=v1; ${expires}; Path=/`,
+    `guest_id_ads=v1; ${expires}; Path=/`
+  ])
+
+  t.alike(headers.getSetCookie(), [
+    `guest_id=v1; ${expires}; Path=/`,
+    `guest_id_ads=v1; ${expires}; Path=/`
+  ])
+  t.is(headers.getSetCookie().length, 2)
 })
 
 test('formData, url encoded', async (t) => {

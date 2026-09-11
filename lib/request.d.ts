@@ -5,6 +5,7 @@ import Headers from './headers'
 import Body from './body'
 
 type RequestRedirect = 'error' | 'follow' | 'manual'
+type RequestCredentials = 'omit' | 'same-origin' | 'include'
 
 interface RequestInit {
   /**
@@ -23,6 +24,11 @@ interface RequestInit {
    * (default `'follow'`).
    */
   redirect?: RequestRedirect
+  /**
+   * Credential mode metadata (default `'same-origin'`). The module has no cookie jar and does not
+   * add or remove cookies based on this value.
+   */
+  credentials?: RequestCredentials
   /** The HTTP agent to use, or `null` to use the protocol's global agent (default `null`). */
   agent?: HTTPAgent
 }
@@ -41,6 +47,11 @@ interface Request extends Body {
   readonly signal: AbortSignal | null
   /** How fetch handles redirects for this request. */
   readonly redirect: RequestRedirect
+  /**
+   * Credential mode metadata. The module has no cookie jar and does not add or remove cookies
+   * based on this value.
+   */
+  readonly credentials: RequestCredentials
 }
 
 declare class Request {
@@ -51,12 +62,14 @@ declare class Request {
    * @throws {BODY_UNUSABLE} `init.body` is a `ReadableStream` that is locked or has already been
    * consumed.
    * @throws {INVALID_REDIRECT} `init.redirect` is not `'follow'`, `'error'`, or `'manual'`.
+   * @throws {INVALID_CREDENTIALS} `init.credentials` is not `'omit'`, `'same-origin'`, or
+   * `'include'`.
    */
   constructor(input: string | URL | Request, init?: RequestInit)
 }
 
 declare namespace Request {
-  export { type RequestInit, type RequestRedirect }
+  export { type RequestCredentials, type RequestInit, type RequestRedirect }
 }
 
 export = Request
