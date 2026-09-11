@@ -829,6 +829,55 @@ test('headers getSetCookie', (t) => {
   t.alike(headers.getSetCookie(), ['session=abc', 'theme=dark'])
 })
 
+test('headers set an array of values', (t) => {
+  t.plan(2)
+
+  const headers = new Headers()
+  headers.set('set-cookie', ['session=abc; Path=/', 'theme=dark; Path=/'])
+
+  t.alike(headers.getSetCookie(), ['session=abc; Path=/', 'theme=dark; Path=/'])
+  t.is(headers.get('set-cookie'), 'session=abc; Path=/, theme=dark; Path=/')
+})
+
+test('headers set an array of values replacing existing values', (t) => {
+  t.plan(1)
+
+  const headers = new Headers()
+  headers.append('set-cookie', 'session=abc')
+  headers.append('set-cookie', 'theme=dark')
+  headers.set('Set-Cookie', ['session=xyz'])
+
+  t.alike(headers.getSetCookie(), ['session=xyz'])
+})
+
+test('headers set an array of values trimming and validating each value', (t) => {
+  t.plan(2)
+
+  const headers = new Headers()
+  headers.set('x-foo', ['  bar  ', 'baz'])
+
+  t.is(headers.get('x-foo'), 'bar, baz')
+  t.exception(() => headers.set('x-foo', ['bar', 'baz\r\nEvil: smuggled']), /INVALID_HEADER_VALUE/)
+})
+
+test('headers set an array of values preserving commas within a value', (t) => {
+  t.plan(2)
+
+  const expires = 'Expires=Sun, 10 Sep 2028 11:21:58 GMT'
+
+  const headers = new Headers()
+  headers.set('set-cookie', [
+    `guest_id=v1; ${expires}; Path=/`,
+    `guest_id_ads=v1; ${expires}; Path=/`
+  ])
+
+  t.alike(headers.getSetCookie(), [
+    `guest_id=v1; ${expires}; Path=/`,
+    `guest_id_ads=v1; ${expires}; Path=/`
+  ])
+  t.is(headers.getSetCookie().length, 2)
+})
+
 test('formData, url encoded', async (t) => {
   t.plan(2)
 

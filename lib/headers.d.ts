@@ -31,7 +31,7 @@ interface Headers extends Iterable<[name: string, value: string]> {
    * header name.
    * @throws {INVALID_HEADER_VALUE} `value` contains a NUL, CR, or LF character.
    */
-  set(name: string, value: string): void
+  set(name: string, value: string | string[]): void
   /** Return an iterator over `[name, value]` pairs. */
   entries(): IterableIterator<[name: string, value: string]>
   /** Return an iterator over header names. */
