@@ -269,6 +269,31 @@ test('redirect, relative location', async (t) => {
   t.is(buf.toString(), 'redirected')
 })
 
+test('redirect mode', async (t) => {
+  const port = await createServer(t, (req, res) => {
+    if (req.url === '/') {
+      res.writeHead(301, { location: '/redirected' })
+      res.end('redirecting')
+    } else {
+      res.end('redirected')
+    }
+  })
+
+  const url = `http://localhost:${port}`
+
+  const followed = await fetch(url, { redirect: 'follow' })
+  t.is(followed.url, `${url}/redirected`)
+  t.is(await followed.text(), 'redirected')
+
+  await t.exception.all(fetch(url, { redirect: 'error' }), /Redirect mode is set to error/)
+
+  const manual = await fetch(url, { redirect: 'manual' })
+  t.is(manual.url, `${url}/`)
+  t.is(manual.status, 301)
+  t.is(manual.headers.get('location'), '/redirected')
+  t.is(await manual.text(), 'redirecting')
+})
+
 test('redirect to invalid url', async (t) => {
   t.plan(1)
 
@@ -749,6 +774,21 @@ test('construct request from existing request preserves signal', (t) => {
 
   t.is(new Request(req).signal, controller.signal)
   t.is(new Request(req, { signal: null }).signal, null)
+})
+
+test('request redirect mode', (t) => {
+  const req = new Request('https://example.com', { redirect: 'manual' })
+
+  t.is(new Request('https://example.com').redirect, 'follow')
+  t.is(req.redirect, 'manual')
+  t.is(new Request(req).redirect, 'manual')
+  t.is(new Request(req, { redirect: 'error' }).redirect, 'error')
+
+  t.exception.all(
+    () => new Request('https://example.com', { redirect: 'invalid' }),
+    /INVALID_REDIRECT/
+  )
+  t.exception.all(() => new Request('https://example.com', { redirect: null }), /INVALID_REDIRECT/)
 })
 
 test('request credentials mode', (t) => {

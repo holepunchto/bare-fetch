@@ -4,6 +4,7 @@ import { AbortSignal } from 'bare-abort-controller'
 import Headers from './headers'
 import Body from './body'
 
+type RequestRedirect = 'error' | 'follow' | 'manual'
 type RequestCredentials = 'omit' | 'same-origin' | 'include'
 
 interface RequestInit {
@@ -18,6 +19,11 @@ interface RequestInit {
   headers?: Headers
   /** An `AbortSignal` for aborting the request with an `AbortController` (default `null`). */
   signal?: AbortSignal
+  /**
+   * How fetch handles redirects: follow them, reject the fetch, or return the redirect response
+   * (default `'follow'`).
+   */
+  redirect?: RequestRedirect
   /**
    * Credential mode metadata (default `'same-origin'`). The module has no cookie jar and does not
    * add or remove cookies based on this value.
@@ -39,6 +45,8 @@ interface Request extends Body {
   readonly headers: Headers
   /** The abort signal associated with the request, or `null`. */
   readonly signal: AbortSignal | null
+  /** How fetch handles redirects for this request. */
+  readonly redirect: RequestRedirect
   /**
    * Credential mode metadata. The module has no cookie jar and does not add or remove cookies
    * based on this value.
@@ -53,6 +61,7 @@ declare class Request {
    * @throws {INVALID_URL} `input` is not a valid URL.
    * @throws {BODY_UNUSABLE} `init.body` is a `ReadableStream` that is locked or has already been
    * consumed.
+   * @throws {INVALID_REDIRECT} `init.redirect` is not `'follow'`, `'error'`, or `'manual'`.
    * @throws {INVALID_CREDENTIALS} `init.credentials` is not `'omit'`, `'same-origin'`, or
    * `'include'`.
    */
@@ -60,7 +69,7 @@ declare class Request {
 }
 
 declare namespace Request {
-  export { type RequestCredentials, type RequestInit }
+  export { type RequestCredentials, type RequestInit, type RequestRedirect }
 }
 
 export = Request
