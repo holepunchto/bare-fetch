@@ -748,11 +748,11 @@ test('request credentials mode', (t) => {
 
   t.exception.all(
     () => new Request('https://example.com', { credentials: 'invalid' }),
-    /Invalid credentials/
+    /INVALID_CREDENTIALS/
   )
   t.exception.all(
     () => new Request('https://example.com', { credentials: null }),
-    /Invalid credentials/
+    /INVALID_CREDENTIALS/
   )
 })
 

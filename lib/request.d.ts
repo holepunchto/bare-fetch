@@ -19,7 +19,7 @@ interface RequestInit {
   /** An `AbortSignal` for aborting the request with an `AbortController` (default `null`). */
   signal?: AbortSignal
   /**
-   * Credential mode metadata (default `'same-origin'`). Bare-fetch has no cookie jar and does not
+   * Credential mode metadata (default `'same-origin'`). The module has no cookie jar and does not
    * add or remove cookies based on this value.
    */
   credentials?: RequestCredentials
@@ -40,7 +40,7 @@ interface Request extends Body {
   /** The abort signal associated with the request, or `null`. */
   readonly signal: AbortSignal | null
   /**
-   * Credential mode metadata. Bare-fetch has no cookie jar and does not add or remove cookies
+   * Credential mode metadata. The module has no cookie jar and does not add or remove cookies
    * based on this value.
    */
   readonly credentials: RequestCredentials
@@ -53,7 +53,8 @@ declare class Request {
    * @throws {INVALID_URL} `input` is not a valid URL.
    * @throws {BODY_UNUSABLE} `init.body` is a `ReadableStream` that is locked or has already been
    * consumed.
-   * @throws {TypeError} `init.credentials` is not `'omit'`, `'same-origin'`, or `'include'`.
+   * @throws {INVALID_CREDENTIALS} `init.credentials` is not `'omit'`, `'same-origin'`, or
+   * `'include'`.
    */
   constructor(input: string | URL | Request, init?: RequestInit)
 }
