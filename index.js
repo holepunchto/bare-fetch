@@ -3,6 +3,7 @@ const https = require('bare-https')
 const { now, markResourceTiming } = require('bare-performance')
 const { finished } = require('bare-stream')
 const { ReadableStream } = require('bare-stream/web')
+const Body = require('./lib/body')
 const Request = require('./lib/request')
 const Response = require('./lib/response')
 const ResponseStream = require('./lib/response-stream')
@@ -26,18 +27,20 @@ module.exports = exports = function fetch(input, init = {}) {
 
   const timingInfo = { startTime: now(), endTime: 0 }
 
-  process(input)
+  let request
+  try {
+    request = new Request(input, init)
+  } catch (err) {
+    reject(err)
+
+    return promise
+  }
+
+  process()
 
   return promise
 
-  async function process(input, origin = null) {
-    let request
-    try {
-      request = new Request(input, init)
-    } catch (err) {
-      return reject(err)
-    }
-
+  async function process() {
     let req = null
 
     if (request.signal) {
@@ -55,10 +58,6 @@ module.exports = exports = function fetch(input, init = {}) {
 
     if (response._urls.length > 20) {
       return reject(errors.TOO_MANY_REDIRECTS('Redirect count exceeded'))
-    }
-
-    if (origin && !isSameOrigin(request._url, origin)) {
-      request.headers.delete('authorization')
     }
 
     let protocol
@@ -81,62 +80,19 @@ module.exports = exports = function fetch(input, init = {}) {
 
     while (agent.suspended) await agent.resumed
 
-    req = protocol.request(
-      request._url,
-      {
-        agent,
-        method: request._method,
-        headers: Object.fromEntries(request._headers)
-      },
-      (res) => {
-        req.off('close', onclose)
-
-        if (request.signal && request.signal.aborted) {
-          res.resume()
-
-          return abort(reject, request, response)
-        }
-
-        if (
-          res.headers.location &&
-          isRedirectStatus(res.statusCode) &&
-          request.redirect !== 'manual'
-        ) {
-          res.resume()
-
-          if (request.redirect === 'error') {
-            return reject(new TypeError('Redirect mode is set to error'))
-          }
-
-          let url
-          try {
-            url = new URL(res.headers.location, request._url)
-          } catch (err) {
-            return reject(errors.INVALID_URL('Invalid URL', err))
-          }
-
-          return process(url, request._url)
-        }
-
-        const responseStream = new ResponseStream(res)
-
-        response._body = new ReadableStream(responseStream)
-        response._status = res.statusCode
-        response._statusText = res.statusMessage
-
-        finished(responseStream, { cleanup: true }, processResponseEndOfBody)
-
-        for (const [name, value] of Object.entries(res.headers)) {
-          if (Array.isArray(value)) {
-            for (const item of value) response._headers.append(name, item)
-          } else {
-            response._headers.set(name, value)
-          }
-        }
-
-        resolve(response)
-      }
-    )
+    try {
+      req = protocol.request(
+        request._url,
+        {
+          agent,
+          method: request._method,
+          headers: Object.fromEntries(request._headers)
+        },
+        onresponse
+      )
+    } catch (err) {
+      return reject(errors.NETWORK_ERROR('Network error', err))
+    }
 
     req.on('error', onerror).on('close', onclose)
 
@@ -148,6 +104,61 @@ module.exports = exports = function fetch(input, init = {}) {
       req.end()
     } catch (err) {
       req.destroy(err)
+    }
+
+    function onresponse(res) {
+      req.off('close', onclose)
+
+      if (request.signal && request.signal.aborted) {
+        res.resume()
+
+        return abort(reject, request, response)
+      }
+
+      if (
+        res.headers.location &&
+        isRedirectStatus(res.statusCode) &&
+        request.redirect !== 'manual'
+      ) {
+        res.resume()
+
+        if (request.redirect === 'error') {
+          return reject(new TypeError('Redirect mode is set to error'))
+        }
+
+        let url
+        try {
+          url = new URL(res.headers.location, request._url)
+        } catch (err) {
+          return reject(errors.INVALID_URL('Invalid URL', err))
+        }
+
+        try {
+          redirect(request, res.statusCode, url)
+        } catch (err) {
+          return reject(err)
+        }
+
+        return process()
+      }
+
+      const responseStream = new ResponseStream(res)
+
+      response._body = new ReadableStream(responseStream)
+      response._status = res.statusCode
+      response._statusText = res.statusMessage
+
+      finished(responseStream, { cleanup: true }, processResponseEndOfBody)
+
+      for (const [name, value] of Object.entries(res.headers)) {
+        if (Array.isArray(value)) {
+          for (const item of value) response._headers.append(name, item)
+        } else {
+          response._headers.set(name, value)
+        }
+      }
+
+      resolve(response)
     }
 
     function processResponseEndOfBody(err) {
@@ -178,6 +189,45 @@ exports.Headers = Headers
 function isRedirectStatus(status) {
   return status === 301 || status === 302 || status === 303 || status === 307 || status === 308
 }
+
+// https://fetch.spec.whatwg.org/#http-redirect-fetch
+function redirect(request, status, url) {
+  if (status !== 303 && request._body !== null && request._source === null) {
+    throw errors.NETWORK_ERROR('Cannot replay a streamed body to follow a redirect')
+  }
+
+  if (
+    ((status === 301 || status === 302) && request._method === 'POST') ||
+    (status === 303 && request._method !== 'GET' && request._method !== 'HEAD')
+  ) {
+    request._method = 'GET'
+    request._body = null
+    request._source = null
+
+    for (const name of requestBodyHeaderNames) request._headers.delete(name)
+  }
+
+  if (!isSameOrigin(request._url, url)) {
+    for (const name of crossOriginHeaderNames) request._headers.delete(name)
+  }
+
+  if (request._body !== null) request._body = Body.fromSource(request._source)
+
+  request._url = url
+}
+
+// https://fetch.spec.whatwg.org/#request-body-header-name
+const requestBodyHeaderNames = [
+  'content-encoding',
+  'content-language',
+  'content-length',
+  'content-location',
+  'content-type'
+]
+
+// Beyond the `authorization` header required by the specification, credentials
+// and routing set by the caller for one origin must not reach another.
+const crossOriginHeaderNames = ['authorization', 'cookie', 'host', 'proxy-authorization']
 
 // https://html.spec.whatwg.org/multipage/browsers.html#same-origin
 function isSameOrigin(a, b) {
