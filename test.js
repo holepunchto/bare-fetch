@@ -6,6 +6,8 @@ const FormData = require('bare-form-data')
 const { AbortSignal, AbortController } = require('bare-abort-controller')
 const { PerformanceObserver, clearResourceTimings } = require('bare-performance')
 
+const { ReadableStream } = require('bare-stream/web')
+
 const fetch = require('.')
 
 const { Response, Request, Headers } = fetch
@@ -511,6 +513,192 @@ test('strip auth headers from cross-origin redirects', async (t) => {
 
   serverA.close()
   serverB.close()
+})
+
+test('auth headers stay stripped after a cross-origin redirect', async (t) => {
+  const seen = []
+
+  const portB = await createServer(t, (req, res) => {
+    seen.push([req.url, req.headers.authorization, req.headers.cookie])
+
+    if (req.url === '/') {
+      res.writeHead(302, { location: '/again' })
+      res.end()
+    } else {
+      res.end('done')
+    }
+  })
+
+  const portA = await createServer(t, (req, res) => {
+    res.writeHead(302, { location: `http://localhost:${portB}/` })
+    res.end()
+  })
+
+  const res = await fetch(`http://localhost:${portA}`, {
+    headers: { Authorization: 'Bearer Bare', Cookie: 'session=secret' }
+  })
+
+  t.is(await res.text(), 'done')
+  t.alike(seen, [
+    ['/', undefined, undefined],
+    ['/again', undefined, undefined]
+  ])
+})
+
+test('strip cookie and proxy-authorization from cross-origin redirects', async (t) => {
+  let crossOrigin = null
+
+  const portB = await createServer(t, (req, res) => {
+    crossOrigin = req.headers
+    res.end()
+  })
+
+  let sameOrigin = null
+
+  const portA = await createServer(t, (req, res) => {
+    if (req.url === '/') {
+      res.writeHead(301, { location: '/same' })
+    } else {
+      sameOrigin = req.headers
+      res.writeHead(301, { location: `http://localhost:${portB}` })
+    }
+
+    res.end()
+  })
+
+  await fetch(`http://localhost:${portA}`, {
+    headers: { Cookie: 'session=secret', 'Proxy-Authorization': 'Basic secret' }
+  })
+
+  t.is(sameOrigin.cookie, 'session=secret')
+  t.is(sameOrigin['proxy-authorization'], 'Basic secret')
+  t.absent(crossOrigin.cookie)
+  t.absent(crossOrigin['proxy-authorization'])
+})
+
+test('redirect rewrites method and body as specified', async (t) => {
+  const cases = [
+    ['POST', 301, 'GET', ''],
+    ['POST', 302, 'GET', ''],
+    ['POST', 303, 'GET', ''],
+    ['PUT', 303, 'GET', ''],
+    ['PUT', 301, 'PUT', 'payload'],
+    ['POST', 307, 'POST', 'payload'],
+    ['POST', 308, 'POST', 'payload']
+  ]
+
+  for (const [method, status, expectedMethod, expectedBody] of cases) {
+    let target = null
+
+    const port = await createServer(t, async (req, res) => {
+      if (req.url === '/') {
+        req.resume()
+        res.writeHead(status, { location: '/target' })
+        return res.end()
+      }
+
+      const chunks = []
+      for await (const chunk of req) chunks.push(chunk)
+
+      target = { method: req.method, body: Buffer.concat(chunks).toString(), headers: req.headers }
+      res.end()
+    })
+
+    await fetch(`http://localhost:${port}`, {
+      method,
+      body: 'payload',
+      headers: { 'Content-Type': 'text/plain' }
+    })
+
+    const name = `${method} ${status}`
+
+    t.is(target.method, expectedMethod, `${name} method`)
+    t.is(target.body, expectedBody, `${name} body`)
+    t.is(target.headers['content-type'], expectedBody ? 'text/plain' : undefined, `${name} type`)
+  }
+})
+
+test('redirect with a streamed body is a network error', async (t) => {
+  const port = await createServer(t, (req, res) => {
+    req.resume()
+    res.writeHead(307, { location: '/target' })
+    res.end()
+  })
+
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(Buffer.from('payload'))
+      controller.close()
+    }
+  })
+
+  await t.exception(fetch(`http://localhost:${port}`, { method: 'POST', body }), /NETWORK_ERROR/)
+})
+
+test('redirect keeps the method, headers and body of a Request input', async (t) => {
+  let target = null
+
+  const port = await createServer(t, async (req, res) => {
+    if (req.url === '/') {
+      req.resume()
+      res.writeHead(307, { location: '/target' })
+      return res.end()
+    }
+
+    const chunks = []
+    for await (const chunk of req) chunks.push(chunk)
+
+    target = { method: req.method, body: Buffer.concat(chunks).toString(), headers: req.headers }
+    res.end()
+  })
+
+  const request = new Request(`http://localhost:${port}`, {
+    method: 'PUT',
+    body: 'payload',
+    headers: { 'X-Custom': 'value' }
+  })
+
+  await fetch(request)
+
+  t.is(target.method, 'PUT')
+  t.is(target.body, 'payload')
+  t.is(target.headers['x-custom'], 'value')
+})
+
+test('malformed userinfo escape rejects', async (t) => {
+  const port = await createServer(t, (req, res) => {
+    res.writeHead(302, { location: `http://%E0@localhost:${port}/` })
+    res.end()
+  })
+
+  await t.exception(fetch(`http://%FF@localhost:${port}/`), /NETWORK_ERROR/)
+  await t.exception(fetch(`http://localhost:${port}/`), /NETWORK_ERROR/)
+})
+
+test('content encodings', async (t) => {
+  const sent = Buffer.from('This is the correct message.')
+
+  const cases = [
+    ['deflate', zlib.deflateSync(sent)],
+    ['GZIP', zlib.gzipSync(sent)],
+    [' x-gzip ', zlib.gzipSync(sent)],
+    ['identity', sent],
+    ['deflate, gzip', zlib.gzipSync(zlib.deflateSync(sent))],
+    ['br', Buffer.from('raw')],
+    ['gzip, br', Buffer.from('raw')]
+  ]
+
+  for (const [encoding, data] of cases) {
+    const port = await createServer(t, (req, res) => {
+      res.writeHead(200, { 'Content-Encoding': encoding })
+      res.end(data)
+    })
+
+    const res = await fetch(`http://localhost:${port}`)
+    const received = await res.buffer()
+
+    t.alike(received, encoding.includes('br') ? data : sent, encoding)
+  }
 })
 
 test('destroy unconsumed body', async (t) => {
