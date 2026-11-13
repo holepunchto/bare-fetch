@@ -1,6 +1,7 @@
 const test = require('brittle')
 const listen = require('listen-async')
 const http = require('bare-http1')
+const tcp = require('bare-tcp')
 const zlib = require('bare-zlib')
 const FormData = require('bare-form-data')
 const { AbortSignal, AbortController } = require('bare-abort-controller')
@@ -79,6 +80,18 @@ test('network error', async (t) => {
   const port = await createServer(t, (req, res) => res.destroy())
 
   await t.exception(fetch(`http://localhost:${port}`), /NETWORK_ERROR/)
+})
+
+test('network error when the server hangs up during the TLS handshake', async (t) => {
+  t.plan(1)
+
+  const server = tcp.createServer((socket) => socket.end())
+
+  t.teardown(() => server.close())
+
+  await listen(server, 0)
+
+  await t.exception(fetch(`https://localhost:${server.address().port}`), /NETWORK_ERROR/)
 })
 
 test('text', async (t) => {
